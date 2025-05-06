@@ -1,0 +1,223 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2980b9;
+    --accent-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --display-bg: #1a1a1a;
+    --key-bg: #f5f5f5;
+    --key-hover: #e0e0e0;
+    --operator-bg: #d1d1d1;
+    --operator-hover: #b8b8b8;
+    --equals-bg: #2ecc71;
+    --equals-hover: #27ae60;
+    --clear-bg: #e74c3c;
+    --clear-hover: #c0392b;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.calculator {
+    width: 100%;
+    max-width: 400px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.mode-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.mode-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.mode-btn.active {
+    background-color: white;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.mode-btn:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.display {
+    background-color: var(--display-bg);
+    color: white;
+    padding: 20px;
+    text-align: right;
+    position: relative;
+}
+
+.history {
+    min-height: 20px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
+    word-wrap: break-word;
+}
+
+.display-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    text-align: right;
+    outline: none;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 20px;
+    background-color: white;
+}
+
+.scientific-mode {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.programmer-mode {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.key {
+    border: none;
+    border-radius: 8px;
+    padding: 15px 0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: var(--key-bg);
+    color: var(--dark-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.key:hover {
+    background-color: var(--key-hover);
+}
+
+.number {
+    font-weight: bold;
+}
+
+.zero {
+    grid-column: span 2;
+}
+
+.operator {
+    background-color: var(--operator-bg);
+    font-weight: bold;
+}
+
+.operator:hover {
+    background-color: var(--operator-hover);
+}
+
+.equals {
+    background-color: var(--equals-bg);
+    color: white;
+    font-weight: bold;
+}
+
+.equals:hover {
+    background-color: var(--equals-hover);
+}
+
+.clear {
+    background-color: var(--clear-bg);
+    color: white;
+    font-weight: bold;
+}
+
+.clear:hover {
+    background-color: var(--clear-hover);
+}
+
+.backspace {
+    background-color: var(--operator-bg);
+}
+
+.backspace:hover {
+    background-color: var(--operator-hover);
+}
+
+.scientific {
+    background-color: #e0f7fa;
+    font-size: 0.9rem;
+}
+
+.scientific:hover {
+    background-color: #b2ebf2;
+}
+
+.programmer {
+    background-color: #e8f5e9;
+    font-size: 0.9rem;
+}
+
+.programmer:hover {
+    background-color: #c8e6c9;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 500px) {
+    .calculator {
+        max-width: 100%;
+    }
+    
+    .key {
+        padding: 12px 0;
+        font-size: 1rem;
+    }
+    
+    .scientific, .programmer {
+        font-size: 0.8rem;
+    }
+}

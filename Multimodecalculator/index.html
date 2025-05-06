@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Mode Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="calculator">
+        <div class="header">
+            <h1>Calculator</h1>
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="basic">Basic</button>
+                <button class="mode-btn" data-mode="scientific">Scientific</button>
+                <button class="mode-btn" data-mode="programmer">Programmer</button>
+            </div>
+        </div>
+        
+        <div class="display">
+            <div class="history" id="history"></div>
+            <input type="text" class="display-input" id="display" readonly>
+        </div>
+        
+        <div class="keypad basic-mode">
+            <button class="key clear" onclick="clearDisplay()">C</button>
+            <button class="key backspace" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+            <button class="key operator" onclick="appendToDisplay('%')">%</button>
+            <button class="key operator" onclick="appendToDisplay('/')">/</button>
+            
+            <button class="key number" onclick="appendToDisplay('7')">7</button>
+            <button class="key number" onclick="appendToDisplay('8')">8</button>
+            <button class="key number" onclick="appendToDisplay('9')">9</button>
+            <button class="key operator" onclick="appendToDisplay('*')">×</button>
+            
+            <button class="key number" onclick="appendToDisplay('4')">4</button>
+            <button class="key number" onclick="appendToDisplay('5')">5</button>
+            <button class="key number" onclick="appendToDisplay('6')">6</button>
+            <button class="key operator" onclick="appendToDisplay('-')">-</button>
+            
+            <button class="key number" onclick="appendToDisplay('1')">1</button>
+            <button class="key number" onclick="appendToDisplay('2')">2</button>
+            <button class="key number" onclick="appendToDisplay('3')">3</button>
+            <button class="key operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="key number zero" onclick="appendToDisplay('0')">0</button>
+            <button class="key number" onclick="appendToDisplay('.')">.</button>
+            <button class="key equals" onclick="calculate()">=</button>
+        </div>
+        
+        <div class="keypad scientific-mode hidden">
+            <button class="key scientific" onclick="calculateFunction('Math.sin(')">sin</button>
+            <button class="key scientific" onclick="calculateFunction('Math.cos(')">cos</button>
+            <button class="key scientific" onclick="calculateFunction('Math.tan(')">tan</button>
+            <button class="key operator" onclick="appendToDisplay('(')">(</button>
+            <button class="key operator" onclick="appendToDisplay(')')">)</button>
+            
+            <button class="key scientific" onclick="calculateFunction('Math.asin(')">sin⁻¹</button>
+            <button class="key scientific" onclick="calculateFunction('Math.acos(')">cos⁻¹</button>
+            <button class="key scientific" onclick="calculateFunction('Math.atan(')">tan⁻¹</button>
+            <button class="key scientific" onclick="appendToDisplay('Math.PI')">π</button>
+            <button class="key scientific" onclick="appendToDisplay('Math.E')">e</button>
+            
+            <button class="key scientific" onclick="calculateFunction('Math.log(')">ln</button>
+            <button class="key scientific" onclick="calculateFunction('Math.log10(')">log</button>
+            <button class="key scientific" onclick="appendToDisplay('Math.sqrt(')">√</button>
+            <button class="key scientific" onclick="appendToDisplay('**2')">x²</button>
+            <button class="key scientific" onclick="appendToDisplay('**')">x^y</button>
+            
+            <button class="key scientific" onclick="calculateFunction('Math.exp(')">exp</button>
+            <button class="key scientific" onclick="appendToDisplay('10**')">10^x</button>
+            <button class="key scientific" onclick="appendToDisplay('1/')">1/x</button>
+            <button class="key scientific" onclick="appendToDisplay('Math.abs(')">|x|</button>
+            <button class="key scientific" onclick="factorial()">x!</button>
+            
+            <button class="key clear" onclick="clearDisplay()">C</button>
+            <button class="key backspace" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+            <button class="key operator" onclick="appendToDisplay('%')">%</button>
+            <button class="key operator" onclick="appendToDisplay('/')">/</button>
+            <button class="key operator" onclick="appendToDisplay('*')">×</button>
+            
+            <button class="key number" onclick="appendToDisplay('7')">7</button>
+            <button class="key number" onclick="appendToDisplay('8')">8</button>
+            <button class="key number" onclick="appendToDisplay('9')">9</button>
+            <button class="key operator" onclick="appendToDisplay('-')">-</button>
+            
+            <button class="key number" onclick="appendToDisplay('4')">4</button>
+            <button class="key number" onclick="appendToDisplay('5')">5</button>
+            <button class="key number" onclick="appendToDisplay('6')">6</button>
+            <button class="key operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="key number" onclick="appendToDisplay('1')">1</button>
+            <button class="key number" onclick="appendToDisplay('2')">2</button>
+            <button class="key number" onclick="appendToDisplay('3')">3</button>
+            <button class="key equals" onclick="calculate()">=</button>
+            
+            <button class="key number zero" onclick="appendToDisplay('0')">0</button>
+            <button class="key number" onclick="appendToDisplay('.')">.</button>
+            <button class="key operator" onclick="appendToDisplay('+/-')">+/-</button>
+        </div>
+        
+        <div class="keypad programmer-mode hidden">
+            <button class="key programmer" onclick="changeBase('bin')">BIN</button>
+            <button class="key programmer" onclick="changeBase('oct')">OCT</button>
+            <button class="key programmer" onclick="changeBase('dec')">DEC</button>
+            <button class="key programmer" onclick="changeBase('hex')">HEX</button>
+            
+            <button class="key programmer" onclick="appendToDisplay('~')">NOT</button>
+            <button class="key programmer" onclick="appendToDisplay('&')">AND</button>
+            <button class="key programmer" onclick="appendToDisplay('|')">OR</button>
+            <button class="key programmer" onclick="appendToDisplay('^')">XOR</button>
+            <button class="key programmer" onclick="appendToDisplay('<<')"><<</button>
+            
+            <button class="key clear" onclick="clearDisplay()">C</button>
+            <button class="key backspace" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+            <button class="key operator" onclick="appendToDisplay('(')">(</button>
+            <button class="key operator" onclick="appendToDisplay(')')">)</button>
+            <button class="key operator" onclick="appendToDisplay('>>')">>></button>
+            
+            <button class="key programmer" onclick="appendToDisplay('A')">A</button>
+            <button class="key programmer" onclick="appendToDisplay('B')">B</button>
+            <button class="key programmer" onclick="appendToDisplay('C')">C</button>
+            <button class="key operator" onclick="appendToDisplay('/')">/</button>
+            <button class="key operator" onclick="appendToDisplay('%')">%</button>
+            
+            <button class="key programmer" onclick="appendToDisplay('D')">D</button>
+            <button class="key programmer" onclick="appendToDisplay('E')">E</button>
+            <button class="key programmer" onclick="appendToDisplay('F')">F</button>
+            <button class="key operator" onclick="appendToDisplay('*')">×</button>
+            <button class="key operator" onclick="appendToDisplay('>>>')">>>></button>
+            
+            <button class="key number" onclick="appendToDisplay('7')">7</button>
+            <button class="key number" onclick="appendToDisplay('8')">8</button>
+            <button class="key number" onclick="appendToDisplay('9')">9</button>
+            <button class="key operator" onclick="appendToDisplay('-')">-</button>
+            
+            <button class="key number" onclick="appendToDisplay('4')">4</button>
+            <button class="key number" onclick="appendToDisplay('5')">5</button>
+            <button class="key number" onclick="appendToDisplay('6')">6</button>
+            <button class="key operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="key number" onclick="appendToDisplay('1')">1</button>
+            <button class="key number" onclick="appendToDisplay('2')">2</button>
+            <button class="key number" onclick="appendToDisplay('3')">3</button>
+            <button class="key equals" onclick="calculate()">=</button>
+            
+            <button class="key number zero" onclick="appendToDisplay('0')">0</button>
+            <button class="key number" onclick="appendToDisplay('.')">.</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
