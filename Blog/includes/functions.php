@@ -3,9 +3,16 @@ require_once 'db.php';
 
 function getRecentPosts($limit = 5) {
     global $pdo;
-    $stmt = $pdo->prepare("SELECT * FROM posts ORDER BY created_at DESC LIMIT ?");
-    $stmt->execute([$limit]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM posts ORDER BY created_at DESC LIMIT ?");
+        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // Log the error or handle it appropriately
+        error_log("Database error: " . $e->getMessage());
+        return []; // Return empty array on error
+    }
 }
 
 function getCategories() {
