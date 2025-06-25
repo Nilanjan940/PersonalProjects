@@ -1,3 +1,54 @@
+<?php
+session_start();
+require_once __DIR__ . '../../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input
+    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $sku = filter_input(INPUT_POST, 'sku', FILTER_SANITIZE_STRING);
+    $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING);
+    $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
+    $supplier_id = filter_input(INPUT_POST, 'supplier_id', FILTER_VALIDATE_INT);
+    $unit_price = filter_input(INPUT_POST, 'unit_price', FILTER_VALIDATE_FLOAT);
+    $reorder_level = filter_input(INPUT_POST, 'reorder_level', FILTER_VALIDATE_INT, ['options' => ['default' => 10]]);
+    $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT, ['options' => ['default' => 0]]);
+
+    // Insert into database
+    try {
+        $pdo->beginTransaction();
+        
+        // Insert product
+        $stmt = $pdo->prepare("INSERT INTO products (name, sku, description, category_id, supplier_id, unit_price, reorder_level) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $sku, $description, $category_id, $supplier_id, $unit_price, $reorder_level]);
+        $product_id = $pdo->lastInsertId();
+        
+        // Insert inventory
+        $stmt = $pdo->prepare("INSERT INTO inventory (product_id, quantity) VALUES (?, ?)");
+        $stmt->execute([$product_id, $quantity]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Product added successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error adding product: " . $e->getMessage();
+    }
+}
+
+// Get categories and suppliers for dropdowns
+$categories = $pdo->query("SELECT * FROM categories")->fetchAll();
+$suppliers = $pdo->query("SELECT * FROM suppliers")->fetchAll();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,30 +153,34 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-boxes me-2"></i>Add New Product</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Products
                     </a>
                 </div>
 
                 <div class="product-form">
-                    <form id="productForm">
+                    <form method="POST" action="create.php">
                         <div class="form-section">
                             <h3><i class="fas fa-info-circle me-2"></i>Basic Information</h3>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Product Name*</label>
-                                    <input type="text" class="form-control" required>
+                                    <input type="text" name="name" class="form-control" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">SKU Code*</label>
-                                    <input type="text" class="form-control" required>
+                                    <input type="text" name="sku" class="form-control" required>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Description</label>
-                                <textarea class="form-control" rows="3"></textarea>
+                                <textarea name="description" class="form-control" rows="3"></textarea>
                             </div>
                         </div>
 
@@ -134,19 +189,20 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Category*</label>
-                                    <select class="form-select" required>
+                                    <select name="category_id" class="form-select" required>
                                         <option value="">Select Category</option>
-                                        <option>Raw Materials</option>
-                                        <option>Components</option>
-                                        <option>Finished Goods</option>
+                                        <?php foreach ($categories as $category): ?>
+                                            <option value="<?= $category['category_id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Supplier</label>
-                                    <select class="form-select">
+                                    <select name="supplier_id" class="form-select">
                                         <option value="">Select Supplier</option>
-                                        <option>SteelCo Inc.</option>
-                                        <option>MaterialPlus</option>
+                                        <?php foreach ($suppliers as $supplier): ?>
+                                            <option value="<?= $supplier['supplier_id'] ?>"><?= htmlspecialchars($supplier['name']) ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
@@ -157,18 +213,18 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Initial Stock*</label>
-                                    <input type="number" class="form-control" required>
+                                    <input type="number" name="quantity" class="form-control" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Unit Price*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" step="0.01" class="form-control" required>
+                                        <input type="number" step="0.01" name="unit_price" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Reorder Level</label>
-                                    <input type="number" class="form-control" value="10">
+                                    <input type="number" name="reorder_level" class="form-control" value="10">
                                 </div>
                             </div>
                         </div>
@@ -246,13 +302,6 @@
                 }
             }
         }
-
-        // Form submission
-        document.getElementById('productForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Product added successfully!');
-            window.location.href = 'read.html';
-        });
     </script>
 </body>
 </html>
