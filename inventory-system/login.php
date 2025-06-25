@@ -1,3 +1,55 @@
+<?php
+session_start();
+
+// Database connection
+require_once __DIR__ . '/config/database.php';
+
+// Initialize variables
+$error = '';
+$username = '';
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
+    $remember = isset($_POST['remember']);
+
+    // Validate inputs
+    if (empty($username) || empty($password)) {
+        $error = 'Please enter both username and password';
+    } else {
+        // Check credentials against database
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username OR email = :username");
+        $stmt->execute([':username' => $username]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password'])) {
+            // Authentication successful
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            
+            // Set cookie if "remember me" is checked (30 days expiration)
+            if ($remember) {
+                $cookie_value = base64_encode($user['user_id'] . ':' . hash('sha256', $user['password']));
+                setcookie('remember_token', $cookie_value, time() + (86400 * 30), "/");
+            }
+            
+            // Redirect to dashboard
+            header('Location: dashboard.php');
+            exit();
+        } else {
+            $error = 'Invalid username or password';
+        }
+    }
+}
+
+// If already logged in, redirect to dashboard
+if (isset($_SESSION['user_id'])) {
+    header('Location: dashboard.php');
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,29 +181,40 @@
         </div>
         
         <div class="auth-body">
-            <form id="loginForm">
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+            
+            <form method="POST" action="login.php">
                 <div class="mb-3">
                     <label for="username" class="form-label">Username or Email</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username or email" required>
+                        <input type="text" class="form-control <?= $error ? 'is-invalid' : '' ?>" 
+                               id="username" name="username" value="<?= htmlspecialchars($username) ?>" 
+                               placeholder="Enter your username or email" required>
                     </div>
-                    <div class="invalid-feedback" id="username_feedback"></div>
+                    <?php if ($error): ?>
+                        <div class="invalid-feedback"><?= htmlspecialchars($error) ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                        <input type="password" class="form-control <?= $error ? 'is-invalid' : '' ?>" 
+                               id="password" name="password" placeholder="Enter your password" required>
                     </div>
-                    <div class="invalid-feedback" id="password_feedback"></div>
+                    <?php if ($error): ?>
+                        <div class="invalid-feedback"><?= htmlspecialchars($error) ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="remember" name="remember">
                     <label class="form-check-label" for="remember">Remember me</label>
-                    <a href="#" class="float-end">Forgot password?</a>
+                    <a href="forgot-password.php" class="float-end">Forgot password?</a>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">
@@ -159,7 +222,7 @@
                 </button>
                 
                 <div class="text-center mt-3">
-                    <p class="mb-0">Don't have an account? <a href="register.html">Register here</a></p>
+                    <p class="mb-0">Don't have an account? <a href="register.php">Register here</a></p>
                 </div>
             </form>
         </div>
@@ -167,112 +230,35 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        // Add client-side validation similar to the original login.html
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            let isValid = true;
+
             // Reset validation
             document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
             
-            // Get form values
-            const formData = {
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
-                remember: document.getElementById('remember').checked
-            };
-            
-            // Client-side validation
-            let isValid = true;
-            
-            if (!formData.username) {
+            // Validate inputs
+            if (!username) {
                 document.getElementById('username').classList.add('is-invalid');
-                document.getElementById('username_feedback').textContent = 'Please enter your username or email';
+                document.querySelector('#username + .invalid-feedback').textContent = 'Please enter your username or email';
                 isValid = false;
             }
             
-            if (!formData.password) {
+            if (!password) {
                 document.getElementById('password').classList.add('is-invalid');
-                document.getElementById('password_feedback').textContent = 'Please enter your password';
+                document.querySelector('#password + .invalid-feedback').textContent = 'Please enter your password';
                 isValid = false;
             }
             
-            if (!isValid) return;
-            
-            // Simulate API call
-            const btn = this.querySelector('button[type="submit"]');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Authenticating...';
-            btn.disabled = true;
-            
-            try {
-                // In a real app, you would make an actual API call here
-                const response = await simulateLoginApiCall(formData);
-                
-                if (response.success) {
-                    // Store token if remember me is checked
-                    if (formData.remember) {
-                        localStorage.setItem('authToken', response.token);
-                    } else {
-                        sessionStorage.setItem('authToken', response.token);
-                    }
-                    
-                    window.location.href = 'dashboard.html';
-                } else {
-                    // Handle login errors
-                    document.getElementById('username').classList.add('is-invalid');
-                    document.getElementById('password').classList.add('is-invalid');
-                    document.getElementById('password_feedback').textContent = 'Invalid username or password';
-                    
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Login';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('An error occurred during login. Please try again.');
-                btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Login';
-                btn.disabled = false;
-            }
-        });
-        
-        // Simulate API call (replace with actual fetch in production)
-        function simulateLoginApiCall(formData) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    // Simulate checking credentials against your database
-                    const validUsers = [
-                        { username: 'admin', password: 'admin123', email: 'admin@inventory.com' },
-                        { username: 'manager1', password: 'manager123', email: 'manager@inventory.com' },
-                        { username: 'staff1', password: 'staff123', email: 'staff@inventory.com' }
-                    ];
-                    
-                    // Check if username/email and password match
-                    const user = validUsers.find(u => 
-                        (u.username === formData.username || u.email === formData.username) && 
-                        u.password === formData.password
-                    );
-                    
-                    if (user) {
-                        resolve({ 
-                            success: true, 
-                            token: 'simulated_jwt_token', 
-                            user: { 
-                                username: user.username, 
-                                role: user.username === 'admin' ? 'admin' : 
-                                      user.username.startsWith('manager') ? 'manager' : 'staff' 
-                            } 
-                        });
-                    } else {
-                        resolve({ success: false });
-                    }
-                }, 1500);
-            });
-        }
-        
-        // Check for existing token on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-            if (token) {
-                // In a real app, you would validate the token
-                window.location.href = 'dashboard.html';
+            if (!isValid) {
+                e.preventDefault();
+            } else {
+                // Show loading state
+                const btn = this.querySelector('button[type="submit"]');
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Authenticating...';
+                btn.disabled = true;
             }
         });
     </script>

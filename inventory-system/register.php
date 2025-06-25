@@ -1,3 +1,93 @@
+<?php
+session_start();
+
+// Database connection
+require_once __DIR__ . '/config/database.php';
+
+// Initialize variables
+$errors = [];
+$formData = [
+    'full_name' => '',
+    'username' => '',
+    'email' => ''
+];
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Sanitize inputs
+    $formData = [
+        'full_name' => trim($_POST['full_name']),
+        'username' => trim($_POST['username']),
+        'email' => trim($_POST['email']),
+        'password' => $_POST['password'],
+        'confirm_password' => $_POST['confirm_password']
+    ];
+
+    // Validate inputs
+    if (empty($formData['full_name'])) {
+        $errors['full_name'] = 'Full name is required';
+    }
+
+    if (empty($formData['username'])) {
+        $errors['username'] = 'Username is required';
+    } elseif (!preg_match('/^[a-zA-Z0-9_]{4,20}$/', $formData['username'])) {
+        $errors['username'] = 'Username must be 4-20 chars (letters, numbers, _)';
+    }
+
+    if (empty($formData['email'])) {
+        $errors['email'] = 'Email is required';
+    } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Invalid email format';
+    }
+
+    if (empty($formData['password'])) {
+        $errors['password'] = 'Password is required';
+    } elseif (strlen($formData['password']) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters';
+    }
+
+    if ($formData['password'] !== $formData['confirm_password']) {
+        $errors['confirm_password'] = 'Passwords do not match';
+    }
+
+    if (!isset($_POST['terms'])) {
+        $errors['terms'] = 'You must agree to the terms';
+    }
+
+    // Check for existing username/email
+    if (empty($errors)) {
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ? OR email = ?");
+        $stmt->execute([$formData['username'], $formData['email']]);
+        
+        if ($stmt->fetch()) {
+            $errors['general'] = 'Username or email already exists';
+        }
+    }
+
+    // If no errors, create user
+    if (empty($errors)) {
+        $hashedPassword = password_hash($formData['password'], PASSWORD_DEFAULT);
+        
+        try {
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role) 
+                                   VALUES (?, ?, ?, ?, 'staff')");
+            $stmt->execute([
+                $formData['username'],
+                $hashedPassword,
+                $formData['full_name'],
+                $formData['email']
+            ]);
+            
+            $_SESSION['registration_success'] = true;
+            header('Location: registration-success.php');
+            exit();
+        } catch (PDOException $e) {
+            $errors['general'] = 'Registration failed. Please try again.';
+            error_log("Registration error: " . $e->getMessage());
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,23 +233,33 @@
         </div>
         
         <div class="auth-body">
-            <form id="registerForm">
+            <?php if (!empty($errors['general'])): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($errors['general']) ?></div>
+            <?php endif; ?>
+            
+            <form method="POST" action="register.php">
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="full_name" class="form-label">Full Name</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Your full name" required>
+                            <input type="text" class="form-control <?= isset($errors['full_name']) ? 'is-invalid' : '' ?>" 
+                                   id="full_name" name="full_name" value="<?= htmlspecialchars($formData['full_name']) ?>" placeholder="Your full name" required>
                         </div>
-                        <div class="invalid-feedback" id="full_name_feedback"></div>
+                        <?php if (isset($errors['full_name'])): ?>
+                            <div class="invalid-feedback"><?= $errors['full_name'] ?></div>
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="username" class="form-label">Username</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-at"></i></span>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                            <input type="text" class="form-control <?= isset($errors['username']) ? 'is-invalid' : '' ?>" 
+                                   id="username" name="username" value="<?= htmlspecialchars($formData['username']) ?>" placeholder="Choose a username" required>
                         </div>
-                        <div class="invalid-feedback" id="username_feedback"></div>
+                        <?php if (isset($errors['username'])): ?>
+                            <div class="invalid-feedback"><?= $errors['username'] ?></div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
@@ -167,37 +267,48 @@
                     <label for="email" class="form-label">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        <input type="email" class="form-control <?= isset($errors['email']) ? 'is-invalid' : '' ?>" 
+                               id="email" name="email" value="<?= htmlspecialchars($formData['email']) ?>" placeholder="Enter your email" required>
                     </div>
-                    <div class="invalid-feedback" id="email_feedback"></div>
+                    <?php if (isset($errors['email'])): ?>
+                        <div class="invalid-feedback"><?= $errors['email'] ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                        <input type="password" class="form-control <?= isset($errors['password']) ? 'is-invalid' : '' ?>" 
+                               id="password" name="password" placeholder="Create a password" required>
                     </div>
                     <div class="password-strength mt-2">
                         <div class="password-strength-bar" id="passwordStrength"></div>
                     </div>
                     <small class="text-muted">Use 8 or more characters with a mix of letters, numbers & symbols</small>
-                    <div class="invalid-feedback" id="password_feedback"></div>
+                    <?php if (isset($errors['password'])): ?>
+                        <div class="invalid-feedback"><?= $errors['password'] ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="mb-3">
                     <label for="confirm_password" class="form-label">Confirm Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                        <input type="password" class="form-control <?= isset($errors['confirm_password']) ? 'is-invalid' : '' ?>" 
+                               id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
                     </div>
-                    <div class="invalid-feedback" id="confirm_password_feedback"></div>
+                    <?php if (isset($errors['confirm_password'])): ?>
+                        <div class="invalid-feedback"><?= $errors['confirm_password'] ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                    <input type="checkbox" class="form-check-input <?= isset($errors['terms']) ? 'is-invalid' : '' ?>" id="terms" name="terms" required>
                     <label class="form-check-label" for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-                    <div class="invalid-feedback">You must agree to the terms</div>
+                    <?php if (isset($errors['terms'])): ?>
+                        <div class="invalid-feedback"><?= $errors['terms'] ?></div>
+                    <?php endif; ?>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">
@@ -205,7 +316,7 @@
                 </button>
                 
                 <div class="text-center mt-3">
-                    <p class="mb-0">Already have an account? <a href="login.html">Login here</a></p>
+                    <p class="mb-0">Already have an account? <a href="login.php">Login here</a></p>
                 </div>
             </form>
         </div>
@@ -234,123 +345,6 @@
                 strengthBar.style.backgroundColor = '#28a745';
             }
         });
-
-        // Form validation
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Reset validation
-            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
-            
-            // Get form values
-            const formData = {
-                full_name: document.getElementById('full_name').value,
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                confirm_password: document.getElementById('confirm_password').value,
-                terms: document.getElementById('terms').checked
-            };
-            
-            // Client-side validation
-            let isValid = true;
-            
-            if (!formData.full_name || formData.full_name.length < 3) {
-                document.getElementById('full_name').classList.add('is-invalid');
-                document.getElementById('full_name_feedback').textContent = 'Please enter your full name';
-                isValid = false;
-            }
-            
-            if (!formData.username || formData.username.length < 4) {
-                document.getElementById('username').classList.add('is-invalid');
-                document.getElementById('username_feedback').textContent = 'Username must be at least 4 characters';
-                isValid = false;
-            }
-            
-            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-                document.getElementById('email').classList.add('is-invalid');
-                document.getElementById('email_feedback').textContent = 'Please enter a valid email address';
-                isValid = false;
-            }
-            
-            if (!formData.password || formData.password.length < 8) {
-                document.getElementById('password').classList.add('is-invalid');
-                document.getElementById('password_feedback').textContent = 'Password must be at least 8 characters';
-                isValid = false;
-            }
-            
-            if (formData.password !== formData.confirm_password) {
-                document.getElementById('confirm_password').classList.add('is-invalid');
-                document.getElementById('confirm_password_feedback').textContent = 'Passwords do not match';
-                isValid = false;
-            }
-            
-            if (!formData.terms) {
-                document.getElementById('terms').classList.add('is-invalid');
-                isValid = false;
-            }
-            
-            if (!isValid) return;
-            
-            // Simulate API call
-            const btn = this.querySelector('button[type="submit"]');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating account...';
-            btn.disabled = true;
-            
-            try {
-                // In a real app, you would make an actual API call here
-                const response = await simulateApiCall(formData);
-                
-                if (response.success) {
-                    window.location.href = 'dashboard.html';
-                } else {
-                    // Handle server-side validation errors
-                    response.errors.forEach(error => {
-                        const field = document.getElementById(error.field);
-                        const feedback = document.getElementById(`${error.field}_feedback`);
-                        if (field && feedback) {
-                            field.classList.add('is-invalid');
-                            feedback.textContent = error.message;
-                        }
-                    });
-                    btn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Create Account';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                alert('An error occurred during registration. Please try again.');
-                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Create Account';
-                btn.disabled = false;
-            }
-        });
-        
-        // Simulate API call (replace with actual fetch in production)
-        function simulateApiCall(formData) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    // Simulate checking for duplicate username/email
-                    const existingUsers = ['admin', 'manager1', 'staff1'];
-                    const existingEmails = ['admin@inventory.com', 'manager@inventory.com', 'staff@inventory.com'];
-                    
-                    const errors = [];
-                    
-                    if (existingUsers.includes(formData.username)) {
-                        errors.push({ field: 'username', message: 'Username already taken' });
-                    }
-                    
-                    if (existingEmails.includes(formData.email)) {
-                        errors.push({ field: 'email', message: 'Email already registered' });
-                    }
-                    
-                    if (errors.length > 0) {
-                        resolve({ success: false, errors });
-                    } else {
-                        resolve({ success: true });
-                    }
-                }, 1500);
-            });
-        }
     </script>
 </body>
 </html>
