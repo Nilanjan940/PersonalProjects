@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Report - InduStock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --info: #17a2b8;
+            --danger: #dc3545;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+            min-height: 100vh;
+            width: calc(100% - 250px);
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: 70px;
+            width: calc(100% - 70px);
+        }
+        
+        /* Toggle Button */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Report Styles */
+        .report-header {
+            border-bottom: 2px solid var(--info);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .preview-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+        }
+        
+        .format-badge {
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        
+        .section-card {
+            border-left: 4px solid var(--info);
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .main-content {
+                margin-left: 0 !important;
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .section-card {
+                padding-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="d-flex">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="container py-5">
+                <div class="report-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1><i class="fas fa-edit me-2"></i>Edit Report</h1>
+                        <a href="read.html" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Reports
+                        </a>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <h4 id="reportTitle">October 2023 Inventory Summary</h4>
+                        <span class="badge bg-info" id="lastGenerated">Last Generated: 2023-11-01</span>
+                    </div>
+                </div>
+                
+                <form id="editReportForm">
+                    <input type="hidden" id="reportId">
+                    
+                    <div class="section-card">
+                        <h4><i class="fas fa-info-circle me-2"></i>Basic Information</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Report Name*</label>
+                                <input type="text" class="form-control" id="reportName" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Output Formats*</label>
+                                <div class="d-flex flex-wrap gap-2" id="formatBadges">
+                                    <span class="badge bg-primary format-badge" data-format="pdf">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                    </span>
+                                    <span class="badge bg-success format-badge" data-format="excel">
+                                        <i class="fas fa-file-excel me-1"></i>Excel
+                                    </span>
+                                    <span class="badge bg-secondary format-badge" data-format="html">
+                                        <i class="fas fa-code me-1"></i>HTML
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="reportDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h4><i class="fas fa-filter me-2"></i>Filters & Parameters</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Report Type*</label>
+                                <select class="form-select" id="reportType" required>
+                                    <option value="">Select Type</option>
+                                    <option>Inventory Summary</option>
+                                    <option>Purchase History</option>
+                                    <option>Supplier Analysis</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Time Period*</label>
+                                <select class="form-select" id="timePeriod" required>
+                                    <option>Last 7 Days</option>
+                                    <option>Last 30 Days</option>
+                                    <option>Last 90 Days</option>
+                                    <option>Custom Range</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Category Filter</label>
+                                <select class="form-select" id="categoryFilter" multiple>
+                                    <option>Raw Materials</option>
+                                    <option>Components</option>
+                                    <option>Finished Goods</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location Filter</label>
+                                <select class="form-select" id="locationFilter" multiple>
+                                    <option>Warehouse A</option>
+                                    <option>Warehouse B</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h4><i class="fas fa-chart-line me-2"></i>Visualization Options</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Chart Type</label>
+                                <select class="form-select" id="chartType">
+                                    <option value="">None</option>
+                                    <option>Bar Chart</option>
+                                    <option>Pie Chart</option>
+                                    <option>Line Graph</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Color Scheme</label>
+                                <select class="form-select" id="colorScheme">
+                                    <option>Default</option>    
+                                    <option>Industrial</option>
+                                    <option>Vibrant</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="showDataTable">
+                            <label class="form-check-label" for="showDataTable">Include Data Table</label>
+                        </div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h4><i class="fas fa-eye me-2"></i>Live Preview</h4>
+                        <div class="preview-container">
+                            <div class="text-center text-muted py-5" id="previewPlaceholder">
+                                <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                                <p>Report preview will update automatically when changes are made</p>
+                            </div>
+                            <div id="chartContainer" style="display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-4">
+                        <button type="button" class="btn btn-danger me-md-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-1"></i> Delete Report
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "<span id="modalReportTitle"></span>"?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This will permanently remove the report configuration and generated files.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load sidebar content
+        fetch('../assets/sidebar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('sidebar-container').innerHTML = data;
+                initializeSidebar();
+            })
+            .catch(error => console.error('Error loading sidebar:', error));
+
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.querySelector('.sidebar-toggle');
+            
+            // Mobile toggle
+            mobileToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+            
+            // Collapse/expand functionality
+            const collapseBtn = document.getElementById('collapseToggle');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.classList.remove('fa-chevron-left');
+                        icon.classList.add('fa-chevron-right');
+                    } else {
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-left');
+                    }
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 992 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== mobileToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+            
+            // Load saved sidebar state
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('collapseToggle')?.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-left');
+                    icon.classList.add('fa-chevron-right');
+                }
+            }
+        }
+
+        // Report edit functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get report ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportId = urlParams.get('id');
+            
+            if (reportId) {
+                document.getElementById('reportId').value = reportId;
+                
+                // In a real application, you would fetch report data from an API
+                // Here we'll simulate fetching report data
+                setTimeout(() => {
+                    // This would be replaced with actual API call
+                    const mockReport = {
+                        id: reportId,
+                        name: "October 2023 Inventory Summary",
+                        description: "Comprehensive overview of all inventory movements during October 2023",
+                        type: "Inventory Summary",
+                        timePeriod: "October 2023 (Custom)",
+                        categories: ["Raw Materials", "Components"],
+                        locations: ["Warehouse A"],
+                        chartType: "Pie Chart",
+                        colorScheme: "Industrial",
+                        showDataTable: true,
+                        formats: ["pdf", "excel"],
+                        lastGenerated: "2023-11-01"
+                    };
+                    
+                    // Populate form fields
+                    document.getElementById('reportTitle').textContent = mockReport.name;
+                    document.getElementById('modalReportTitle').textContent = mockReport.name;
+                    document.getElementById('reportName').value = mockReport.name;
+                    document.getElementById('reportDescription').value = mockReport.description;
+                    document.getElementById('reportType').value = mockReport.type;
+                    document.getElementById('timePeriod').value = mockReport.timePeriod;
+                    document.getElementById('chartType').value = mockReport.chartType;
+                    document.getElementById('colorScheme').value = mockReport.colorScheme;
+                    document.getElementById('showDataTable').checked = mockReport.showDataTable;
+                    document.getElementById('lastGenerated').textContent = `Last Generated: ${mockReport.lastGenerated}`;
+                    
+                    // Set selected categories
+                    mockReport.categories.forEach(category => {
+                        const option = Array.from(document.getElementById('categoryFilter').options)
+                            .find(opt => opt.text === category);
+                        if (option) option.selected = true;
+                    });
+                    
+                    // Set selected locations
+                    mockReport.locations.forEach(location => {
+                        const option = Array.from(document.getElementById('locationFilter').options)
+                            .find(opt => opt.text === location);
+                        if (option) option.selected = true;
+                    });
+                    
+                    // Set selected formats
+                    document.querySelectorAll('.format-badge').forEach(badge => {
+                        const format = badge.getAttribute('data-format');
+                        if (mockReport.formats.includes(format)) {
+                            badge.classList.remove('bg-secondary');
+                            if (format === 'pdf') {
+                                badge.classList.add('bg-primary');
+                            } else {
+                                badge.classList.add('bg-success');
+                            }
+                        }
+                    });
+                    
+                    // Show chart preview if chart type is selected
+                    if (mockReport.chartType) {
+                        document.getElementById('previewPlaceholder').style.display = 'none';
+                        document.getElementById('chartContainer').style.display = 'block';
+                        // In a real app, you would render the actual chart here
+                        document.getElementById('chartContainer').innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-chart-${mockReport.chartType.toLowerCase().includes('pie') ? 'pie' : 'bar'} fa-3x text-info mb-3"></i>
+                                <p>${mockReport.chartType} Preview</p>
+                            </div>
+                        `;
+                    }
+                }, 300);
+            }
+            
+            // Toggle format badges
+            document.querySelectorAll('.format-badge').forEach(badge => {
+                badge.addEventListener('click', function() {
+                    this.classList.toggle('bg-secondary');
+                    if (this.classList.contains('bg-primary')) {
+                        this.classList.replace('bg-primary', 'bg-secondary');
+                    } else if (this.classList.contains('bg-success')) {
+                        this.classList.replace('bg-success', 'bg-secondary');
+                    } else {
+                        const format = this.getAttribute('data-format');
+                        if (format === 'pdf') {
+                            this.classList.replace('bg-secondary', 'bg-primary');
+                        } else {
+                            this.classList.replace('bg-secondary', 'bg-success');
+                        }
+                    }
+                });
+            });
+            
+            // Form submission
+            document.getElementById('editReportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get form values
+                const reportData = {
+                    id: document.getElementById('reportId').value,
+                    name: document.getElementById('reportName').value,
+                    description: document.getElementById('reportDescription').value,
+                    type: document.getElementById('reportType').value,
+                    timePeriod: document.getElementById('timePeriod').value,
+                    categories: Array.from(document.getElementById('categoryFilter').selectedOptions)
+                        .map(option => option.value),
+                    locations: Array.from(document.getElementById('locationFilter').selectedOptions)
+                        .map(option => option.value),
+                    chartType: document.getElementById('chartType').value,
+                    colorScheme: document.getElementById('colorScheme').value,
+                    showDataTable: document.getElementById('showDataTable').checked,
+                    formats: Array.from(document.querySelectorAll('.format-badge'))
+                        .filter(badge => !badge.classList.contains('bg-secondary'))
+                        .map(badge => badge.getAttribute('data-format'))
+                };
+                
+                // Validate form
+                if (!reportData.name || !reportData.type || !reportData.timePeriod) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                // In a real application, you would make an API call here
+                console.log('Updating report:', reportData);
+                
+                alert('Report updated successfully!');
+                window.location.href = 'read.html';
+            });
+            
+            // Delete confirmation
+            document.getElementById('confirmDelete').addEventListener('click', function() {
+                const reportId = document.getElementById('reportId').value;
+                if (reportId) {
+                    // In a real app, you would make an API call here
+                    alert(`Report with ID ${reportId} deleted successfully`);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                    modal.hide();
+                    window.location.href = 'read.html';
+                }
+            });
+            
+            // Update preview when chart type changes
+            document.getElementById('chartType').addEventListener('change', function() {
+                const chartType = this.value;
+                const previewPlaceholder = document.getElementById('previewPlaceholder');
+                const chartContainer = document.getElementById('chartContainer');
+                
+                if (chartType) {
+                    previewPlaceholder.style.display = 'none';
+                    chartContainer.style.display = 'block';
+                    // In a real app, you would render the actual chart here
+                    chartContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-${chartType.toLowerCase().includes('pie') ? 'pie' : 'bar'} fa-3x text-info mb-3"></i>
+                            <p>${chartType} Preview</p>
+                        </div>
+                    `;
+                } else {
+                    previewPlaceholder.style.display = 'block';
+                    chartContainer.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

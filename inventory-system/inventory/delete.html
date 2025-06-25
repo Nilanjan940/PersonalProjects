@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Inventory - InduStock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --primary: #2c3e50;
+        }
+        .confirmation-panel {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .item-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .impact-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .impact-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .impact-list li:last-child {
+            border-bottom: none;
+        }
+        .impact-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+            color: var(--danger);
+        }
+        .btn-delete {
+            transition: all 0.3s;
+        }
+        .btn-delete:disabled {
+            opacity: 0.65;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-trash-alt me-2 text-danger"></i>Delete Inventory Item</h1>
+            <a href="read.html" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Inventory
+            </a>
+        </div>
+
+        <div class="confirmation-panel">
+            <div class="alert alert-danger">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>Permanent Deletion</h4>
+                <p class="mb-0">This will permanently remove this item from inventory records.</p>
+            </div>
+
+            <div class="item-details">
+                <div class="text-center mb-3">
+                    <img src="https://via.placeholder.com/100?text=SP" width="80" class="rounded mb-2">
+                    <h3>Steel Plate 4x8</h3>
+                    <p class="text-muted">SKU: PRD-1001 | Location: WH-A-12</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Current Stock:</strong> 8</p>
+                        <p><strong>Last Updated:</strong> 2023-10-15</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> <span class="badge bg-warning">Low Stock</span></p>
+                        <p><strong>Value:</strong> $1,245.75</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h5><i class="fas fa-exclamation-circle text-warning me-2"></i>This will:</h5>
+                <ul class="impact-list">
+                    <li>
+                        <span class="impact-icon"><i class="fas fa-box-open"></i></span>
+                        Permanently remove 8 units from inventory
+                    </li>
+                    <li>
+                        <span class="impact-icon"><i class="fas fa-file-invoice"></i></span>
+                        Create an audit record of this deletion
+                    </li>
+                    <li>
+                        <span class="impact-icon"><i class="fas fa-ban"></i></span>
+                        Prevent future transactions for this item
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Reason for Deletion*</label>
+                <select class="form-select" id="deleteReason" required>
+                    <option value="">Select reason</option>
+                    <option>Discontinued item</option>
+                    <option>Inventory correction</option>
+                    <option>Damaged beyond repair</option>
+                    <option>Other (specify below)</option>
+                </select>
+            </div>
+
+            <div class="mb-4" id="otherReasonContainer" style="display: none;">
+                <label class="form-label">Please specify*</label>
+                <textarea class="form-control" rows="2" id="otherReason"></textarea>
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                <label class="form-check-label" for="confirmDelete">
+                    I understand this will permanently remove all records of this inventory item
+                </label>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="read.html" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </a>
+                <button class="btn btn-danger btn-delete" id="deleteBtn" disabled>
+                    <i class="fas fa-trash-alt me-1"></i> Permanently Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteReason = document.getElementById('deleteReason');
+            const otherReasonContainer = document.getElementById('otherReasonContainer');
+            const confirmCheckbox = document.getElementById('confirmDelete');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            // Show/hide other reason field
+            deleteReason.addEventListener('change', function() {
+                otherReasonContainer.style.display = this.value === 'Other (specify below)' ? 'block' : 'none';
+                updateDeleteButton();
+            });
+
+            // Enable/disable delete button
+            confirmCheckbox.addEventListener('change', updateDeleteButton);
+            
+            function updateDeleteButton() {
+                const reasonValid = deleteReason.value && 
+                                  (deleteReason.value !== 'Other (specify below)' || 
+                                   document.getElementById('otherReason').value.trim());
+                deleteBtn.disabled = !(reasonValid && confirmCheckbox.checked);
+            }
+
+            // Delete confirmation
+            deleteBtn.addEventListener('click', function() {
+                if (confirm('Final confirmation: Permanently delete this inventory item?')) {
+                    // Show loading state
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
+                    this.disabled = true;
+                    
+                    // Simulate deletion process
+                    setTimeout(function() {
+                        alert('Inventory item deleted successfully!');
+                        window.location.href = 'read.html';
+                    }, 1500);
+                }
+            });
+
+            // Validate other reason field if shown
+            document.getElementById('otherReason')?.addEventListener('input', updateDeleteButton);
+        });
+    </script>
+</body>
+</html>

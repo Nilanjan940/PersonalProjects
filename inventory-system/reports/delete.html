@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Report - InduStock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+            min-height: 100vh;
+            width: calc(100% - 250px);
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: 70px;
+            width: calc(100% - 70px);
+        }
+        
+        /* Toggle Button */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Delete Confirmation Styles */
+        .confirmation-panel {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .report-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .impact-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .impact-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .impact-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .impact-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+            color: var(--danger);
+        }
+        
+        .btn-delete {
+            transition: all 0.3s;
+        }
+        
+        .btn-delete:disabled {
+            opacity: 0.65;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .main-content {
+                margin-left: 0 !important;
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .confirmation-panel {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="d-flex">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="container py-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-trash-alt me-2 text-danger"></i>Delete Report</h1>
+                    <a href="read.html" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Reports
+                    </a>
+                </div>
+
+                <div class="confirmation-panel">
+                    <div class="alert alert-danger">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i>Permanent Deletion Warning</h4>
+                        <p class="mb-0">This action cannot be undone - all report data will be permanently removed.</p>
+                    </div>
+
+                    <div class="report-details">
+                        <div class="text-center mb-3">
+                            <h3 id="reportName">October 2023 Inventory Summary</h3>
+                            <p class="text-muted" id="reportId">Report ID: REP-2023-1001</p>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Type:</strong> <span id="reportType">Inventory Summary</span></p>
+                                <p><strong>Created:</strong> <span id="reportCreated">2023-11-01</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Last Generated:</strong> <span id="lastGenerated">2023-11-01</span></p>
+                                <p><strong>Formats:</strong> <span id="reportFormats">PDF, Excel</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5><i class="fas fa-exclamation-circle text-warning me-2"></i>This will permanently delete:</h5>
+                        <ul class="impact-list">
+                            <li>
+                                <span class="impact-icon"><i class="fas fa-file-pdf"></i></span>
+                                PDF version of this report
+                            </li>
+                            <li>
+                                <span class="impact-icon"><i class="fas fa-file-excel"></i></span>
+                                Excel spreadsheet export
+                            </li>
+                            <li>
+                                <span class="impact-icon"><i class="fas fa-database"></i></span>
+                                Report configuration and history
+                            </li>
+                            <li>
+                                <span class="impact-icon"><i class="fas fa-bell-slash"></i></span>
+                                Any scheduled generation tasks
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Reason for Deletion*</label>
+                        <select class="form-select" id="deleteReason" required>
+                            <option value="">Select a reason</option>
+                            <option>Report no longer needed</option>
+                            <option>Data is outdated</option>
+                            <option>Duplicate report</option>
+                            <option>Other (please specify)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4" id="otherReasonContainer" style="display: none;">
+                        <label class="form-label">Please specify reason</label>
+                        <textarea class="form-control" rows="2" id="otherReason"></textarea>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            I understand this action is permanent and cannot be undone
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="read.html" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button class="btn btn-danger btn-delete" id="deleteBtn" disabled>
+                            <i class="fas fa-trash-alt me-1"></i> Permanently Delete Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load sidebar content
+        fetch('../assets/sidebar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('sidebar-container').innerHTML = data;
+                initializeSidebar();
+            })
+            .catch(error => console.error('Error loading sidebar:', error));
+
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.querySelector('.sidebar-toggle');
+            
+            // Mobile toggle
+            mobileToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+            
+            // Collapse/expand functionality
+            const collapseBtn = document.getElementById('collapseToggle');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.classList.remove('fa-chevron-left');
+                        icon.classList.add('fa-chevron-right');
+                    } else {
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-left');
+                    }
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 992 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== mobileToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+            
+            // Load saved sidebar state
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('collapseToggle')?.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-left');
+                    icon.classList.add('fa-chevron-right');
+                }
+            }
+        }
+
+        // Report deletion functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get report ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportId = urlParams.get('id');
+            
+            if (reportId) {
+                document.getElementById('reportId').textContent = `Report ID: ${reportId}`;
+                
+                // In a real application, you would fetch report data from an API
+                // Here we'll simulate fetching report data
+                setTimeout(() => {
+                    // This would be replaced with actual API call
+                    const mockReport = {
+                        id: reportId,
+                        name: "October 2023 Inventory Summary",
+                        type: "Inventory Summary",
+                        created: "2023-10-25",
+                        lastGenerated: "2023-11-01",
+                        formats: ["PDF", "Excel"]
+                    };
+                    
+                    // Populate report details
+                    document.getElementById('reportName').textContent = mockReport.name;
+                    document.getElementById('reportType').textContent = mockReport.type;
+                    document.getElementById('reportCreated').textContent = mockReport.created;
+                    document.getElementById('lastGenerated').textContent = mockReport.lastGenerated;
+                    document.getElementById('reportFormats').textContent = mockReport.formats.join(", ");
+                }, 300);
+            }
+            
+            const deleteReason = document.getElementById('deleteReason');
+            const otherReasonContainer = document.getElementById('otherReasonContainer');
+            const confirmCheckbox = document.getElementById('confirmDelete');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            // Show/hide other reason field
+            deleteReason.addEventListener('change', function() {
+                otherReasonContainer.style.display = this.value === 'Other (please specify)' ? 'block' : 'none';
+                updateDeleteButton();
+            });
+
+            // Enable/disable delete button
+            confirmCheckbox.addEventListener('change', updateDeleteButton);
+            
+            function updateDeleteButton() {
+                const reasonValid = deleteReason.value && 
+                                  (deleteReason.value !== 'Other (please specify)' || 
+                                   document.getElementById('otherReason').value.trim());
+                deleteBtn.disabled = !(reasonValid && confirmCheckbox.checked);
+            }
+
+            // Delete confirmation
+            deleteBtn.addEventListener('click', function() {
+                if (confirm('Final confirmation: Permanently delete this report and all its data?')) {
+                    // Show loading state
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
+                    this.disabled = true;
+                    
+                    // Get deletion reason
+                    const reason = deleteReason.value === 'Other (please specify)' 
+                        ? document.getElementById('otherReason').value 
+                        : deleteReason.value;
+                    
+                    // In a real application, you would make an API call here
+                    console.log('Deleting report:', {
+                        reportId,
+                        reason,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Simulate deletion process
+                    setTimeout(function() {
+                        alert('Report deleted successfully!');
+                        window.location.href = 'read.html';
+                    }, 1500);
+                }
+            });
+
+            // Validate other reason field if shown
+            document.getElementById('otherReason')?.addEventListener('input', updateDeleteButton);
+        });
+    </script>
+</body>
+</html>

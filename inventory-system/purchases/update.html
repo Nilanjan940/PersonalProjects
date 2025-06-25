@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Purchase Order - InduStock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --warning: #ffc107;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+            min-height: 100vh;
+            width: calc(100% - 250px);
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: 70px;
+            width: calc(100% - 70px);
+        }
+        
+        /* Toggle Button */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* PO Styles */
+        .po-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .po-item-card {
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        .received-check {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        
+        .total-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .main-content {
+                margin-left: 0 !important;
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .po-item-card .row > div {
+                margin-bottom: 10px;
+            }
+            
+            .po-item-card .row > div:last-child {
+                margin-bottom: 0;
+            }
+            
+            .received-check {
+                position: static;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="d-flex">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="container py-5">
+                <div class="po-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1><i class="fas fa-edit me-2"></i>Edit Purchase Order</h1>
+                        <a href="read.html" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Orders
+                        </a>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <h4>PO-2023-1001</h4>
+                        <span class="badge bg-primary">Last Updated: 2023-10-16</span>
+                    </div>
+                </div>
+
+                <form id="editPOForm">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Supplier*</label>
+                            <select class="form-select" required disabled>
+                                <option selected>SteelCo Inc.</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Expected Delivery Date*</label>
+                            <input type="date" class="form-control" value="2023-10-25" required>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3"><i class="fas fa-boxes me-2"></i>Order Items</h4>
+                    <div id="orderItemsContainer">
+                        <!-- Item 1 -->
+                        <div class="po-item-card">
+                            <div class="form-check form-switch received-check">
+                                <input class="form-check-input" type="checkbox" id="received1" checked>
+                                <label class="form-check-label" for="received1">Received</label>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">Product*</label>
+                                    <select class="form-select" required disabled>
+                                        <option selected>Steel Plates (PRD-1001)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Qty*</label>
+                                    <input type="number" class="form-control" value="10" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Unit Price*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" value="89.99" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger w-100">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Item 2 -->
+                        <div class="po-item-card">
+                            <div class="form-check form-switch received-check">
+                                <input class="form-check-input" type="checkbox" id="received2">
+                                <label class="form-check-label" for="received2">Received</label>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">Product*</label>
+                                    <select class="form-select" required disabled>
+                                        <option selected>Hydraulic Pumps (PRD-1002)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Qty*</label>
+                                    <input type="number" class="form-control" value="5" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Unit Price*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" value="129.50" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-danger w-100">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-4">
+                        <div class="total-display me-3">
+                            Total: $1,474.40
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" id="addItemBtn">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Shipping Method</label>
+                            <select class="form-select">
+                                <option>Standard (5-7 days)</option>
+                                <option selected>Express (2-3 days)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Terms*</label>
+                            <select class="form-select" required>
+                                <option>Net 30</option>
+                                <option selected>Due on Receipt</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" rows="3">Please ensure proper packaging for hydraulic pumps</textarea>
+                    </div>
+
+                    <div class="d-grid d-md-flex justify-content-md-end gap-2">
+                        <button type="button" class="btn btn-danger me-md-2" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="fas fa-times me-1"></i> Cancel Order
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> Update Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Order Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Cancel Purchase Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel PO-2023-1001?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Cancellation Reason*</label>
+                        <select class="form-select" required>
+                            <option value="">Select reason</option>
+                            <option>No longer needed</option>
+                            <option>Found better price</option>
+                            <option>Supplier issue</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action cannot be undone. All received items will be removed from inventory.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning">Confirm Cancellation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load sidebar content
+        fetch('../assets/sidebar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('sidebar-container').innerHTML = data;
+                initializeSidebar();
+            })
+            .catch(error => console.error('Error loading sidebar:', error));
+
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.querySelector('.sidebar-toggle');
+            
+            // Mobile toggle
+            mobileToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+            
+            // Collapse/expand functionality
+            const collapseBtn = document.getElementById('collapseToggle');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.classList.remove('fa-chevron-left');
+                        icon.classList.add('fa-chevron-right');
+                    } else {
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-left');
+                    }
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 992 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== mobileToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+            
+            // Load saved sidebar state
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('collapseToggle')?.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-left');
+                    icon.classList.add('fa-chevron-right');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission
+            document.getElementById('editPOForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Purchase order updated successfully!');
+                window.location.href = 'read.html';
+            });
+
+            // Add new item
+            document.getElementById('addItemBtn').addEventListener('click', function() {
+                alert('Functionality to add new items to existing orders would go here');
+            });
+        });
+    </script>
+</body>
+</html>

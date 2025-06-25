@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | InduStock</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-container {
+            max-width: 500px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .brand-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--secondary);
+        }
+        
+        .brand-header img {
+            height: 40px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .brand-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .brand-header p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .auth-body {
+            padding: 2rem;
+        }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.25rem rgba(44, 62, 80, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            padding: 0.75rem;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1a252f;
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+        }
+        
+        .password-strength {
+            height: 5px;
+            background-color: #e9ecef;
+            margin-bottom: 1rem;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 576px) {
+            .auth-container {
+                margin: 0 1rem;
+            }
+            
+            .auth-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="brand-header">
+            <img src="https://via.placeholder.com/150x40?text=InduStock" alt="InduStock Logo">
+            <h1>INDUSTOCK</h1>
+            <p>Industrial Inventory Management</p>
+        </div>
+        
+        <div class="auth-body">
+            <form id="registerForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Your full name" required>
+                        </div>
+                        <div class="invalid-feedback" id="full_name_feedback"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-at"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                        </div>
+                        <div class="invalid-feedback" id="username_feedback"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="invalid-feedback" id="email_feedback"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                    </div>
+                    <div class="password-strength mt-2">
+                        <div class="password-strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <small class="text-muted">Use 8 or more characters with a mix of letters, numbers & symbols</small>
+                    <div class="invalid-feedback" id="password_feedback"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                    </div>
+                    <div class="invalid-feedback" id="confirm_password_feedback"></div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                    <label class="form-check-label" for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                    <div class="invalid-feedback">You must agree to the terms</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i> Create Account
+                </button>
+                
+                <div class="text-center mt-3">
+                    <p class="mb-0">Already have an account? <a href="login.html">Login here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('passwordStrength');
+            let strength = 0;
+            
+            if (password.length >= 8) strength += 25;
+            if (password.match(/[a-z]/)) strength += 25;
+            if (password.match(/[A-Z]/)) strength += 25;
+            if (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/)) strength += 25;
+            
+            strengthBar.style.width = strength + '%';
+            
+            if (strength < 50) {
+                strengthBar.style.backgroundColor = '#dc3545';
+            } else if (strength < 75) {
+                strengthBar.style.backgroundColor = '#fd7e14';
+            } else {
+                strengthBar.style.backgroundColor = '#28a745';
+            }
+        });
+
+        // Form validation
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Reset validation
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            
+            // Get form values
+            const formData = {
+                full_name: document.getElementById('full_name').value,
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                confirm_password: document.getElementById('confirm_password').value,
+                terms: document.getElementById('terms').checked
+            };
+            
+            // Client-side validation
+            let isValid = true;
+            
+            if (!formData.full_name || formData.full_name.length < 3) {
+                document.getElementById('full_name').classList.add('is-invalid');
+                document.getElementById('full_name_feedback').textContent = 'Please enter your full name';
+                isValid = false;
+            }
+            
+            if (!formData.username || formData.username.length < 4) {
+                document.getElementById('username').classList.add('is-invalid');
+                document.getElementById('username_feedback').textContent = 'Username must be at least 4 characters';
+                isValid = false;
+            }
+            
+            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                document.getElementById('email').classList.add('is-invalid');
+                document.getElementById('email_feedback').textContent = 'Please enter a valid email address';
+                isValid = false;
+            }
+            
+            if (!formData.password || formData.password.length < 8) {
+                document.getElementById('password').classList.add('is-invalid');
+                document.getElementById('password_feedback').textContent = 'Password must be at least 8 characters';
+                isValid = false;
+            }
+            
+            if (formData.password !== formData.confirm_password) {
+                document.getElementById('confirm_password').classList.add('is-invalid');
+                document.getElementById('confirm_password_feedback').textContent = 'Passwords do not match';
+                isValid = false;
+            }
+            
+            if (!formData.terms) {
+                document.getElementById('terms').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Simulate API call
+            const btn = this.querySelector('button[type="submit"]');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating account...';
+            btn.disabled = true;
+            
+            try {
+                // In a real app, you would make an actual API call here
+                const response = await simulateApiCall(formData);
+                
+                if (response.success) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    // Handle server-side validation errors
+                    response.errors.forEach(error => {
+                        const field = document.getElementById(error.field);
+                        const feedback = document.getElementById(`${error.field}_feedback`);
+                        if (field && feedback) {
+                            field.classList.add('is-invalid');
+                            feedback.textContent = error.message;
+                        }
+                    });
+                    btn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Create Account';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('An error occurred during registration. Please try again.');
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Create Account';
+                btn.disabled = false;
+            }
+        });
+        
+        // Simulate API call (replace with actual fetch in production)
+        function simulateApiCall(formData) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Simulate checking for duplicate username/email
+                    const existingUsers = ['admin', 'manager1', 'staff1'];
+                    const existingEmails = ['admin@inventory.com', 'manager@inventory.com', 'staff@inventory.com'];
+                    
+                    const errors = [];
+                    
+                    if (existingUsers.includes(formData.username)) {
+                        errors.push({ field: 'username', message: 'Username already taken' });
+                    }
+                    
+                    if (existingEmails.includes(formData.email)) {
+                        errors.push({ field: 'email', message: 'Email already registered' });
+                    }
+                    
+                    if (errors.length > 0) {
+                        resolve({ success: false, errors });
+                    } else {
+                        resolve({ success: true });
+                    }
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
