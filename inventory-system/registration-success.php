@@ -12,26 +12,128 @@ unset($_SESSION['registration_success']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Successful | InduStock</title>
-    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-container {
+            max-width: 500px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .brand-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--secondary);
+        }
+        
+        .brand-header img {
+            height: 40px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .brand-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .brand-header p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .success-body {
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .success-icon {
+            color: #28a745;
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: bounceIn 0.75s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1a252f;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.1); opacity: 0; }
+            60% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 576px) {
+            .auth-container {
+                margin: 0 1rem;
+            }
+            
+            .success-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6 text-center">
-                <div class="card">
-                    <div class="card-body p-5">
-                        <div class="mb-4">
-                            <i class="fas fa-check-circle fa-5x text-success"></i>
-                        </div>
-                        <h2 class="mb-3">Registration Successful!</h2>
-                        <p class="mb-4">Your account has been created. You can now login to your account.</p>
-                        <a href="login.php" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i> Go to Login
-                        </a>
-                    </div>
-                </div>
+    <div class="auth-container">
+        <div class="brand-header">
+            <img src="https://via.placeholder.com/150x40?text=InduStock" alt="InduStock Logo">
+            <h1>INDUSTOCK</h1>
+            <p>Industrial Inventory Management</p>
+        </div>
+        
+        <div class="success-body">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
             </div>
+            <h2 class="mb-3">Registration Successful!</h2>
+            <p class="mb-4">Your account has been created successfully. You can now login to your account using the credentials you provided.</p>
+            <a href="login.php" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i> Proceed to Login
+            </a>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
