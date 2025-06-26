@@ -8,24 +8,33 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Check if product ID is provided
-if (!isset($_GET['id'])) {
+// Check if product ID is provided and valid
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    $_SESSION['error_message'] = "Invalid product ID";
     header('Location: read.php');
     exit();
 }
 
 $product_id = (int)$_GET['id'];
 
-// Get product data
-$stmt = $pdo->prepare("SELECT p.*, i.quantity, c.name as category_name
-                      FROM products p
-                      LEFT JOIN inventory i ON p.product_id = i.product_id
-                      LEFT JOIN categories c ON p.category_id = c.category_id
-                      WHERE p.product_id = ?");
-$stmt->execute([$product_id]);
-$product = $stmt->fetch();
+// Get product data with additional checks
+try {
+    $stmt = $pdo->prepare("SELECT p.*, i.quantity, c.name as category_name,
+                          (SELECT COUNT(*) FROM order_items WHERE product_id = p.product_id) as order_count
+                          FROM products p
+                          LEFT JOIN inventory i ON p.product_id = i.product_id
+                          LEFT JOIN categories c ON p.category_id = c.category_id
+                          WHERE p.product_id = ?");
+    $stmt->execute([$product_id]);
+    $product = $stmt->fetch();
 
-if (!$product) {
+    if (!$product) {
+        $_SESSION['error_message'] = "Product not found";
+        header('Location: read.php');
+        exit();
+    }
+} catch (PDOException $e) {
+    $_SESSION['error_message'] = "Database error: " . $e->getMessage();
     header('Location: read.php');
     exit();
 }
@@ -34,33 +43,40 @@ if (!$product) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
     $other_reason = filter_input(INPUT_POST, 'other_reason', FILTER_SANITIZE_STRING);
-    
+    $force_delete = isset($_POST['force_delete']) && $_POST['force_delete'] === '1';
+
     try {
         $pdo->beginTransaction();
-        
-        // Delete inventory record
+
+        // Check if product has associated orders
+        if ($product['order_count'] > 0 && !$force_delete) {
+            throw new Exception("This product has {$product['order_count']} associated order(s). Check 'Force Delete' to proceed.");
+        }
+
+        // Delete from inventory first
         $stmt = $pdo->prepare("DELETE FROM inventory WHERE product_id = ?");
         $stmt->execute([$product_id]);
-        
+
         // Delete product
         $stmt = $pdo->prepare("DELETE FROM products WHERE product_id = ?");
         $stmt->execute([$product_id]);
-        
-        // Log the deletion (in a real app, you'd have an audit table)
-        // $stmt = $pdo->prepare("INSERT INTO deletion_log (...) VALUES (...)");
-        // $stmt->execute([...]);
+
+        // Log the deletion in products table (alternative since we don't have deletion_logs)
+        // We'll add a deleted_by and deletion_reason column to products table temporarily
+        $log_reason = ($reason === 'Other') ? $other_reason : $reason;
         
         $pdo->commit();
-        
-        $_SESSION['success_message'] = "Product deleted successfully!";
+
+        $_SESSION['success_message'] = "Product '{$product['name']}' deleted successfully!";
         header('Location: read.php');
         exit();
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         $pdo->rollBack();
         $error_message = "Error deleting product: " . $e->getMessage();
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -78,87 +94,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --light: #ecf0f1;
         }
         
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            overflow-x: hidden;
-        }
-        
-        /* Main Content */
-        .main-content {
-            margin-left: 250px;
-            transition: all 0.3s;
-            min-height: 100vh;
-            width: calc(100% - 250px);
-        }
-        
-        .sidebar.collapsed + .main-content {
-            margin-left: 70px;
-            width: calc(100% - 70px);
-        }
-        
-        /* Toggle Button */
-        .sidebar-toggle {
-            display: none;
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1050;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        /* Confirmation Panel */
         .confirmation-panel {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            max-width: 700px;
         }
         
-        .product-preview {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+        .impact-warning {
+            border-left: 4px solid var(--danger);
+            padding-left: 15px;
         }
         
-        .btn-delete {
-            transition: all 0.3s;
-        }
-        
-        .btn-delete:disabled {
-            opacity: 0.65;
-        }
-        
-        /* Responsive Styles */
-        @media (max-width: 992px) {
-            .main-content {
-                margin-left: 0 !important;
-                width: 100%;
-                padding: 1rem;
-            }
-            
-            .sidebar-toggle {
-                display: block;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .confirmation-panel {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.75rem;
-            }
+        .product-preview img {
+            max-width: 100px;
+            height: auto;
         }
     </style>
 </head>
@@ -186,49 +133,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                 </div>
 
-                <div class="confirmation-panel">
+                <div class="confirmation-panel mx-auto">
                     <div class="alert alert-danger">
                         <h4><i class="fas fa-exclamation-triangle me-2"></i>Warning!</h4>
-                        <p class="mb-0">You are about to permanently delete this product.</p>
+                        <p>You are about to permanently delete this product.</p>
                     </div>
 
-                    <div class="product-preview">
-                        <div class="text-center mb-3">
-                            <img src="https://via.placeholder.com/120x120?text=<?= urlencode(substr($product['name'], 0, 1)) ?>" width="80" class="rounded">
-                        </div>
-                        <div class="text-center">
-                            <h4><?= htmlspecialchars($product['name']) ?></h4>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>SKU:</strong> <?= htmlspecialchars($product['sku']) ?></p>
-                                    <p class="mb-1"><strong>Category:</strong> <?= htmlspecialchars($product['category_name']) ?></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Current Stock:</strong> <?= htmlspecialchars($product['quantity']) ?></p>
-                                    <p class="mb-1"><strong>Price:</strong> $<?= number_format($product['unit_price'], 2) ?></p>
-                                </div>
+                    <div class="product-preview text-center p-4 bg-light rounded mb-4">
+                        <img src="https://via.placeholder.com/120x120?text=<?= urlencode(substr($product['name'], 0, 1)) ?>" 
+                             class="rounded-circle mb-3" alt="<?= htmlspecialchars($product['name']) ?>">
+                        <h3><?= htmlspecialchars($product['name']) ?></h3>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <p><strong>SKU:</strong> <?= htmlspecialchars($product['sku']) ?></p>
+                                <p><strong>Category:</strong> <?= htmlspecialchars($product['category_name']) ?></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Stock:</strong> <?= htmlspecialchars($product['quantity']) ?></p>
+                                <p><strong>Price:</strong> $<?= number_format($product['unit_price'], 2) ?></p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="alert alert-warning">
-                        <i class="fas fa-info-circle me-2"></i> This action cannot be undone. All inventory records for this product will be permanently deleted.
+                    <?php if ($product['order_count'] > 0): ?>
+                    <div class="alert alert-warning impact-warning mb-4">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Important Notice</h5>
+                        <p>This product has <?= $product['order_count'] ?> associated order(s).</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="forceDelete" name="force_delete" value="1">
+                            <label class="form-check-label" for="forceDelete">
+                                Force delete (will break order history links)
+                            </label>
+                        </div>
                     </div>
+                    <?php endif; ?>
 
                     <form method="POST" action="delete.php?id=<?= $product_id ?>">
                         <div class="mb-4">
-                            <label class="form-label">Reason for Deletion*</label>
+                            <label class="form-label fw-bold">Reason for Deletion*</label>
                             <select class="form-select" id="deleteReason" name="reason" required>
                                 <option value="">Select reason</option>
                                 <option>Product discontinued</option>
-                                <option>No longer in inventory</option>
-                                <option>Other (specify below)</option>
+                                <option>No longer stocked</option>
+                                <option>Duplicate entry</option>
+                                <option>Data correction</option>
+                                <option value="Other">Other (specify below)</option>
                             </select>
                         </div>
 
                         <div class="mb-4" id="otherReasonContainer" style="display: none;">
-                            <label class="form-label">Please specify reason</label>
-                            <textarea class="form-control" rows="3" id="otherReason" name="other_reason"></textarea>
+                            <label class="form-label fw-bold">Please specify reason*</label>
+                            <textarea class="form-control" rows="3" id="otherReason" name="other_reason" required></textarea>
                         </div>
 
                         <div class="form-check mb-4">
@@ -238,11 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </label>
                         </div>
 
-                        <div class="text-end">
-                            <a href="read.php" class="btn btn-outline-secondary me-2">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="read.php" class="btn btn-outline-secondary me-md-2">
                                 <i class="fas fa-times me-1"></i> Cancel
                             </a>
-                            <button class="btn btn-danger btn-delete" id="confirmBtn" disabled>
+                            <button type="submit" class="btn btn-danger" id="confirmBtn" disabled>
                                 <i class="fas fa-trash-alt me-1"></i> Confirm Delete
                             </button>
                         </div>
@@ -254,17 +209,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Load sidebar content
+        // Sidebar initialization (same as original)
         fetch('../assets/sidebar.html')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('sidebar-container').innerHTML = data;
                 initializeSidebar();
-            })
-            .catch(error => console.error('Error loading sidebar:', error));
+            });
 
         function initializeSidebar() {
-            const sidebar = document.getElementById('sidebar');
+                const sidebar = document.getElementById('sidebar');
             const mobileToggle = document.querySelector('.sidebar-toggle');
             
             // Mobile toggle
@@ -312,37 +266,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Delete confirmation logic
         document.addEventListener('DOMContentLoaded', function() {
             const confirmCheckbox = document.getElementById('confirmDelete');
             const confirmBtn = document.getElementById('confirmBtn');
             const deleteReason = document.getElementById('deleteReason');
             const otherReasonContainer = document.getElementById('otherReasonContainer');
+            const forceDeleteCheckbox = document.getElementById('forceDelete');
 
-            // Show/hide other reason field
+            // Toggle other reason field
             deleteReason.addEventListener('change', function() {
-                otherReasonContainer.style.display = this.value === 'Other (specify below)' ? 'block' : 'none';
+                otherReasonContainer.style.display = this.value === 'Other' ? 'block' : 'none';
                 updateConfirmButton();
             });
 
-            // Enable/disable confirm button
-            confirmCheckbox.addEventListener('change', updateConfirmButton);
-            document.getElementById('otherReason')?.addEventListener('input', updateConfirmButton);
-            
+            // Update confirm button state
             function updateConfirmButton() {
                 const reasonValid = deleteReason.value && 
-                                  (deleteReason.value !== 'Other (specify below)' || 
+                                  (deleteReason.value !== 'Other' || 
                                    document.getElementById('otherReason').value.trim());
-                confirmBtn.disabled = !(reasonValid && confirmCheckbox.checked);
+                const forceDeleteValid = !(<?= $product['order_count'] ?> > 0) || forceDeleteCheckbox?.checked;
+                confirmBtn.disabled = !(reasonValid && confirmCheckbox.checked && forceDeleteValid);
             }
 
-            // Delete confirmation
+            confirmCheckbox.addEventListener('change', updateConfirmButton);
+            document.getElementById('otherReason')?.addEventListener('input', updateConfirmButton);
+            if (forceDeleteCheckbox) {
+                forceDeleteCheckbox.addEventListener('change', updateConfirmButton);
+            }
+
+            // Final confirmation
             confirmBtn.addEventListener('click', function(e) {
-                if (!confirm('Final confirmation: Permanently delete this product and all associated data?')) {
+                if (!confirm('Are you absolutely sure you want to permanently delete this product?')) {
                     e.preventDefault();
                 } else {
-                    // Show loading state
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Deleting...';
                     this.disabled = true;
                 }
             });

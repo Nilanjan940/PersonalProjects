@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Video Player with Analytics</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="video-container">
+    <video id="video" src="your-video.mp4"></video>
+    
+    <div class="controls">
+      <button id="play-btn">▶</button>
+      <input type="range" id="progress" min="0" max="100" value="0">
+      <span id="time">00:00 / 00:00</span>
+      <button id="mute-btn">🔊</button>
+      <input type="range" id="volume" min="0" max="100" value="100">
+      <button id="speed-btn">1x</button>
+      <button id="fullscreen-btn">⛶</button>
+    </div>
+    
+    <div class="analytics">
+      <h3>Analytics</h3>
+      <p>Total Views: <span id="views">0</span></p>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>

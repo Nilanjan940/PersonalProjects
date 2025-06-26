@@ -8,48 +8,50 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Get all products with inventory and category info
-$query = "SELECT p.*, c.name as category_name, i.quantity 
-          FROM products p
-          LEFT JOIN categories c ON p.category_id = c.category_id
-          LEFT JOIN inventory i ON p.product_id = i.product_id";
+// Build base query with joins
+$baseQuery = "SELECT p.*, c.name as category_name, i.quantity 
+              FROM products p
+              LEFT JOIN categories c ON p.category_id = c.category_id
+              LEFT JOIN inventory i ON p.product_id = i.product_id";
 
-// Add search filter if provided
+// Initialize variables for filtering
+$whereClauses = [];
+$params = [];
+
+// Handle search filter
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 if (!empty($search)) {
-    $query .= " WHERE p.name LIKE :search OR p.sku LIKE :search";
+    $whereClauses[] = "(p.name LIKE :search OR p.sku LIKE :search)";
+    $params[':search'] = "%$search%";
 }
 
-// Add category filter if provided
+// Handle category filter
 $category_filter = isset($_GET['category']) ? (int)$_GET['category'] : 0;
 if ($category_filter > 0) {
-    $query .= (strpos($query, 'WHERE') === false) ? " WHERE" : " AND";
-    $query .= " p.category_id = :category_id";
+    $whereClauses[] = "p.category_id = :category_id";
+    $params[':category_id'] = $category_filter;
 }
 
+// Build final query
+$query = $baseQuery;
+if (!empty($whereClauses)) {
+    $query .= " WHERE " . implode(" AND ", $whereClauses);
+}
 $query .= " ORDER BY p.name ASC";
 
+// Execute product query
 $stmt = $pdo->prepare($query);
-
-if (!empty($search)) {
-    $search_term = "%$search%";
-    $stmt->bindParam(':search', $search_term);
-}
-
-if ($category_filter > 0) {
-    $stmt->bindParam(':category_id', $category_filter);
-}
-
-$stmt->execute();
+$stmt->execute($params);
 $products = $stmt->fetchAll();
 
-// Get categories for filter dropdown
-$categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+// Get unique categories for dropdown (using GROUP BY to ensure uniqueness)
+$categories = $pdo->query("SELECT category_id, name FROM categories GROUP BY name ORDER BY name")->fetchAll();
 
 // Check for success message
 $success_message = $_SESSION['success_message'] ?? null;
 unset($_SESSION['success_message']);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,7 +76,6 @@ unset($_SESSION['success_message']);
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -87,7 +88,6 @@ unset($_SESSION['success_message']);
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -103,7 +103,6 @@ unset($_SESSION['success_message']);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Product Table Styles */
         .product-image {
             width: 60px;
             height: 60px;
@@ -126,7 +125,6 @@ unset($_SESSION['success_message']);
             color: white;
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -196,7 +194,8 @@ unset($_SESSION['success_message']);
                                         <select class="form-select" id="categoryFilter" name="category">
                                             <option value="0">All Categories</option>
                                             <?php foreach ($categories as $category): ?>
-                                                <option value="<?= $category['category_id'] ?>" <?= isset($_GET['category']) && $_GET['category'] == $category['category_id'] ? 'selected' : '' ?>>
+                                                <option value="<?= $category['category_id'] ?>" 
+                                                    <?= isset($_GET['category']) && $_GET['category'] == $category['category_id'] ? 'selected' : '' ?>>
                                                     <?= htmlspecialchars($category['name']) ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -206,7 +205,9 @@ unset($_SESSION['success_message']);
                                 </div>
                                 <div class="col-md-6">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" name="search" placeholder="Search products..." value="<?= htmlspecialchars($search) ?>">
+                                        <input type="text" class="form-control" name="search" 
+                                               placeholder="Search products..." 
+                                               value="<?= htmlspecialchars($search) ?>">
                                         <button class="btn btn-outline-secondary" type="submit">
                                             <i class="fas fa-search"></i>
                                         </button>

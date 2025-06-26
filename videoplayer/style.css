@@ -1,0 +1,67 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background: #f4f4f9;
+}
+
+.video-container {
+  width: 80%;
+  max-width: 800px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+video {
+  width: 100%;
+  display: block;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #222;
+  color: white;
+}
+
+button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+input[type="range"] {
+  flex: 1;
+  height: 5px;
+  background: #555;
+  border-radius: 5px;
+}
+
+.analytics {
+  padding: 10px;
+  background: #333;
+  color: white;
+}
+
+.heatmap {
+  height: 20px;
+  background: #555;
+  margin-top: 10px;
+  display: flex;
+}
+
+.heatmap-segment {
+  flex: 1;
+  height: 100%;
+  background: #444;
+  transition: background 0.3s;
+}

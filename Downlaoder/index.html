@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Media Downloader</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Universal Media Downloader</h1>
+            <p>Download videos & images from WhatsApp Status, YouTube, Facebook, Instagram, Twitter and more</p>
+        </header>
+
+        <div class="main-content">
+            <div class="url-input">
+                <input type="text" id="media-url" placeholder="Paste video/image URL here...">
+                <button id="download-btn"><i class="fas fa-download"></i> Download</button>
+            </div>
+
+            <div class="platforms">
+                <h2>Supported Platforms</h2>
+                <div class="platform-icons">
+                    <div class="platform" data-platform="youtube">
+                        <i class="fab fa-youtube"></i>
+                        <span>YouTube</span>
+                    </div>
+                    <div class="platform" data-platform="instagram">
+                        <i class="fab fa-instagram"></i>
+                        <span>Instagram</span>
+                    </div>
+                    <div class="platform" data-platform="facebook">
+                        <i class="fab fa-facebook"></i>
+                        <span>Facebook</span>
+                    </div>
+                    <div class="platform" data-platform="twitter">
+                        <i class="fab fa-twitter"></i>
+                        <span>Twitter</span>
+                    </div>
+                    <div class="platform" data-platform="whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </div>
+                    <div class="platform" data-platform="tiktok">
+                        <i class="fab fa-tiktok"></i>
+                        <span>TikTok</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-area hidden">
+                <div class="thumbnail">
+                    <img id="media-thumbnail" src="" alt="Media thumbnail">
+                </div>
+                <div class="media-info">
+                    <h3 id="media-title"></h3>
+                    <div class="quality-options">
+                        <select id="quality-select">
+                            <option value="">Select Quality</option>
+                        </select>
+                    </div>
+                    <button id="download-now-btn" class="hidden"><i class="fas fa-download"></i> Download Now</button>
+                </div>
+            </div>
+
+            <div class="how-to-use">
+                <h2>How to Use</h2>
+                <ol>
+                    <li>Copy the URL of the video/image you want to download</li>
+                    <li>Paste it in the input field above</li>
+                    <li>Click the Download button</li>
+                    <li>Select quality (if available) and download your media</li>
+                </ol>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2023 Universal Media Downloader. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <div class="loading hidden">
+        <div class="spinner"></div>
+        <p>Processing your request...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

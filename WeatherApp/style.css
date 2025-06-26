@@ -1,0 +1,35 @@
+/* Previous styles remain the same, add these new styles */
+
+/* Weather Icons */
+.wi {
+    font-size: 4rem;
+    margin: 10px 0;
+}
+
+/* Recent Searches */
+.recent-searches {
+    margin-bottom: 15px;
+}
+
+.recent-search-item {
+    cursor: pointer;
+    color: #0d6efd;
+    margin-right: 8px;
+}
+
+.recent-search-item:hover {
+    text-decoration: underline;
+}
+
+/* Loading Spinner */
+#loading p {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* Location Button */
+#location-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}

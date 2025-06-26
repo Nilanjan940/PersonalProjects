@@ -1,0 +1,12 @@
+[
+    {
+        "question": "What is the largest planet in our solar system?",
+        "correctAnswer": "Jupiter",
+        "options": ["Earth", "Saturn", "Jupiter", "Neptune"]
+    },
+    {
+        "question": "Which country won the 2018 FIFA World Cup?",
+        "correctAnswer": "France",
+        "options": ["Brazil", "Germany", "France", "Spain"]
+    }
+]
