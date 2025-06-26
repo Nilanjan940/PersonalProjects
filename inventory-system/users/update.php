@@ -1,3 +1,76 @@
+<?php
+session_start();
+require_once __DIR__ . '/../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Check if user ID is provided
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    header('Location: read.php');
+    exit();
+}
+
+$userId = $_GET['id'];
+$user = [];
+$error = '';
+$success = '';
+
+// Fetch user data
+try {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user) {
+        header('Location: read.php');
+        exit();
+    }
+} catch (PDOException $e) {
+    $error = "Error fetching user data: " . $e->getMessage();
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $fullName = trim($_POST['full_name']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $role = trim($_POST['role']);
+    $phone = trim($_POST['phone']);
+    $address = trim($_POST['address']);
+    
+    // Validate inputs
+    if (empty($fullName) || empty($email) || empty($role)) {
+        $error = "Please fill in all required fields";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address";
+    } elseif (!empty($password) && strlen($password) < 8) {
+        $error = "Password must be at least 8 characters";
+    } else {
+        try {
+            // Update user in database
+            if (!empty($password)) {
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, password = ?, role = ?, phone = ?, address = ? WHERE user_id = ?");
+                $stmt->execute([$fullName, $email, $hashedPassword, $role, $phone, $address, $userId]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, role = ?, phone = ?, address = ? WHERE user_id = ?");
+                $stmt->execute([$fullName, $email, $role, $phone, $address, $userId]);
+            }
+            
+            $_SESSION['success_message'] = "User updated successfully!";
+            header('Location: read.php');
+            exit();
+        } catch (PDOException $e) {
+            $error = "Error updating user: " . $e->getMessage();
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,43 +175,47 @@
             <div class="container py-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-user-edit me-2"></i>Edit User</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Users
                     </a>
                 </div>
 
+                <?php if ($error): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                <?php endif; ?>
+
                 <div class="user-form">
-                    <form id="editUserForm">
-                        <input type="hidden" id="userId">
+                    <form method="POST" id="editUserForm">
+                        <input type="hidden" name="id" value="<?= htmlspecialchars($user['user_id']) ?>">
                         <div class="mb-3">
                             <label class="form-label">Full Name*</label>
-                            <input type="text" class="form-control" id="fullName" required>
+                            <input type="text" class="form-control" name="full_name" value="<?= htmlspecialchars($user['full_name']) ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Email Address*</label>
-                            <input type="email" class="form-control" id="email" required>
+                            <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($user['email']) ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" placeholder="Leave blank to keep current password">
+                            <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current password">
                             <div class="form-text">Password must be at least 8 characters</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Role*</label>
-                            <select class="form-select" id="role" required>
+                            <select class="form-select" name="role" required>
                                 <option value="">Select Role</option>
-                                <option value="Admin">Admin</option>
-                                <option value="Manager">Manager</option>
-                                <option value="Staff">Staff</option>
+                                <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
+                                <option value="manager" <?= $user['role'] === 'manager' ? 'selected' : '' ?>>Manager</option>
+                                <option value="staff" <?= $user['role'] === 'staff' ? 'selected' : '' ?>>Staff</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone">
+                            <input type="tel" class="form-control" name="phone" value="<?= htmlspecialchars($user['phone'] ?? '') ?>">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Address</label>
-                            <textarea class="form-control" id="address" rows="3"></textarea>
+                            <textarea class="form-control" name="address" rows="3"><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
                         </div>
                         <div class="d-grid gap-2">
                             <button type="reset" class="btn btn-outline-danger">
@@ -213,77 +290,6 @@
                 }
             }
         }
-
-        // Load user data based on URL parameter
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get user ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get('id');
-            
-            if (userId) {
-                document.getElementById('userId').value = userId;
-                
-                // In a real application, you would fetch user data from an API
-                // Here we'll simulate fetching user data
-                setTimeout(() => {
-                    // This would be replaced with actual API call
-                    const mockUser = {
-                        id: userId,
-                        name: "John Doe",
-                        email: "john.doe@example.com",
-                        role: "Admin",
-                        phone: "(123) 456-7890",
-                        address: "123 Main St, Anytown, USA"
-                    };
-                    
-                    // Populate form fields
-                    document.getElementById('fullName').value = mockUser.name;
-                    document.getElementById('email').value = mockUser.email;
-                    document.getElementById('role').value = mockUser.role;
-                    document.getElementById('phone').value = mockUser.phone;
-                    document.getElementById('address').value = mockUser.address;
-                }, 300);
-            }
-            
-            // Form submission
-            document.getElementById('editUserForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form values
-                const userId = document.getElementById('userId').value;
-                const name = document.getElementById('fullName').value;
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const role = document.getElementById('role').value;
-                const phone = document.getElementById('phone').value;
-                const address = document.getElementById('address').value;
-                
-                // Validate form
-                if (!name || !email || !role) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
-                
-                if (password && password.length < 8) {
-                    alert('Password must be at least 8 characters');
-                    return;
-                }
-                
-                // In a real application, you would make an API call here
-                console.log('Updating user:', {
-                    userId,
-                    name,
-                    email,
-                    role,
-                    phone,
-                    address,
-                    passwordChanged: !!password
-                });
-                
-                alert('User updated successfully!');
-                window.location.href = 'read.html';
-            });
-        });
     </script>
 </body>
 </html>

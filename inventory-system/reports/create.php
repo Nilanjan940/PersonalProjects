@@ -1,9 +1,64 @@
+<?php
+session_start();
+require_once __DIR__ . '/../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input
+    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $type = filter_input(INPUT_POST, 'type', FILTER_SANITIZE_STRING);
+    $time_period = filter_input(INPUT_POST, 'time_period', FILTER_SANITIZE_STRING);
+    $categories = $_POST['categories'] ?? [];
+    $suppliers = $_POST['suppliers'] ?? [];
+    $chart_type = filter_input(INPUT_POST, 'chart_type', FILTER_SANITIZE_STRING);
+    $data_points = $_POST['data_points'] ?? [];
+    $notes = filter_input(INPUT_POST, 'notes', FILTER_SANITIZE_STRING);
+    $formats = $_POST['formats'] ?? [];
+
+    // Insert into database
+    try {
+        $pdo->beginTransaction();
+        
+        // Insert report
+        $stmt = $pdo->prepare("INSERT INTO reports (name, type, time_period, chart_type, notes, created_by) 
+                              VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $type, $time_period, $chart_type, $notes, $_SESSION['user_id']]);
+        $report_id = $pdo->lastInsertId();
+        
+        // Insert report formats
+        foreach ($formats as $format) {
+            $stmt = $pdo->prepare("INSERT INTO report_formats (report_id, format) VALUES (?, ?)");
+            $stmt->execute([$report_id, $format]);
+        }
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Report created successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error creating report: " . $e->getMessage();
+    }
+}
+
+// Get categories and suppliers for filters
+$categories = $pdo->query("SELECT * FROM categories")->fetchAll();
+$suppliers = $pdo->query("SELECT * FROM suppliers")->fetchAll();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Report - InduStock</title>
+    <title>New Report - InduStock</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -20,7 +75,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -33,7 +87,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -49,7 +102,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Report Builder Styles */
         .report-builder {
             max-width: 900px;
             margin: 0 auto;
@@ -72,7 +124,6 @@
             min-height: 300px;
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -82,10 +133,6 @@
             
             .sidebar-toggle {
                 display: block;
-            }
-            
-            .report-builder {
-                padding: 20px;
             }
         }
         
@@ -113,18 +160,22 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1><i class="fas fa-chart-bar me-2"></i>Generate New Report</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <h1><i class="fas fa-chart-bar me-2"></i>New Report</h1>
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Reports
                     </a>
                 </div>
 
                 <div class="report-builder">
-                    <form id="reportForm">
+                    <form method="POST" action="create.php" id="reportForm">
                         <div class="mb-4">
                             <label class="form-label">Report Name*</label>
-                            <input type="text" class="form-control" id="reportName" placeholder="e.g., Monthly Inventory Summary" required>
+                            <input type="text" class="form-control" name="name" placeholder="e.g., Monthly Inventory Summary" required>
                         </div>
 
                         <div class="report-section">
@@ -132,38 +183,39 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Report Type*</label>
-                                    <select class="form-select" id="reportType" required>
+                                    <select class="form-select" name="type" required>
                                         <option value="">Select Type</option>
-                                        <option>Inventory Summary</option>
-                                        <option>Purchase History</option>
-                                        <option>Supplier Analysis</option>
-                                        <option>Custom</option>
+                                        <option value="inventory">Inventory Summary</option>
+                                        <option value="purchases">Purchase History</option>
+                                        <option value="suppliers">Supplier Analysis</option>
+                                        <option value="custom">Custom</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Time Period*</label>
-                                    <select class="form-select" id="timePeriod" required>
-                                        <option>Last 7 Days</option>
-                                        <option>Last 30 Days</option>
-                                        <option selected>Last 90 Days</option>
-                                        <option>Custom Range</option>
+                                    <select class="form-select" name="time_period" required>
+                                        <option value="7">Last 7 Days</option>
+                                        <option value="30">Last 30 Days</option>
+                                        <option value="90" selected>Last 90 Days</option>
+                                        <option value="custom">Custom Range</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Category Filter</label>
-                                    <select class="form-select" id="categoryFilter" multiple>
-                                        <option>Raw Materials</option>
-                                        <option>Components</option>
-                                        <option>Finished Goods</option>
+                                    <select class="form-select" name="categories[]" multiple>
+                                        <?php foreach ($categories as $category): ?>
+                                            <option value="<?= $category['category_id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Supplier Filter</label>
-                                    <select class="form-select" id="supplierFilter" multiple>
-                                        <option>SteelCo Inc.</option>
-                                        <option>ElectroParts Ltd</option>
+                                    <select class="form-select" name="suppliers[]" multiple>
+                                        <?php foreach ($suppliers as $supplier): ?>
+                                            <option value="<?= $supplier['supplier_id'] ?>"><?= htmlspecialchars($supplier['name']) ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
@@ -174,21 +226,35 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Chart Type</label>
-                                    <select class="form-select" id="chartType">
+                                    <select class="form-select" name="chart_type">
                                         <option value="">None</option>
-                                        <option>Bar Chart</option>
-                                        <option selected>Pie Chart</option>
-                                        <option>Line Graph</option>
+                                        <option value="bar">Bar Chart</option>
+                                        <option value="pie" selected>Pie Chart</option>
+                                        <option value="line">Line Graph</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Data Points</label>
-                                    <select class="form-select" id="dataPoints" multiple>
-                                        <option selected>Quantity</option>
-                                        <option selected>Value</option>
-                                        <option>Category</option>
+                                    <select class="form-select" name="data_points[]" multiple>
+                                        <option value="quantity" selected>Quantity</option>
+                                        <option value="value" selected>Value</option>
+                                        <option value="category">Category</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h4><i class="fas fa-file-export me-2"></i>Output Formats</h4>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <input type="checkbox" class="btn-check" name="formats[]" id="formatPdf" value="pdf" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary" for="formatPdf"><i class="fas fa-file-pdf me-1"></i>PDF</label>
+                                
+                                <input type="checkbox" class="btn-check" name="formats[]" id="formatExcel" value="excel" autocomplete="off" checked>
+                                <label class="btn btn-outline-success" for="formatExcel"><i class="fas fa-file-excel me-1"></i>Excel</label>
+                                
+                                <input type="checkbox" class="btn-check" name="formats[]" id="formatHtml" value="html" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="formatHtml"><i class="fas fa-code me-1"></i>HTML</label>
                             </div>
                         </div>
 
@@ -202,7 +268,12 @@
                             </div>
                         </div>
 
-                        <div class="d-grid d-md-flex justify-content-md-end gap-2 mt-4">
+                        <div class="mb-4">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-grid d-md-flex justify-content-md-end gap-2">
                             <button type="reset" class="btn btn-outline-danger">
                                 <i class="fas fa-undo me-1"></i> Reset
                             </button>
@@ -276,60 +347,25 @@
             }
         }
 
-        // Report generation functionality
+        // Update preview when form changes
         document.addEventListener('DOMContentLoaded', function() {
-            // Form submission
-            document.getElementById('reportForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form values
-                const reportData = {
-                    name: document.getElementById('reportName').value,
-                    type: document.getElementById('reportType').value,
-                    timePeriod: document.getElementById('timePeriod').value,
-                    categories: Array.from(document.getElementById('categoryFilter').selectedOptions).map(option => option.value),
-                    suppliers: Array.from(document.getElementById('supplierFilter').selectedOptions).map(option => option.value),
-                    chartType: document.getElementById('chartType').value,
-                    dataPoints: Array.from(document.getElementById('dataPoints').selectedOptions).map(option => option.value)
-                };
-                
-                // Validate form
-                if (!reportData.name || !reportData.type || !reportData.timePeriod) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
-                
-                // In a real application, you would make an API call here
-                console.log('Generating report:', reportData);
-                
-                // Simulate report generation
-                const preview = document.getElementById('reportPreview');
-                preview.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary mb-3" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <h5>Generating Report...</h5>
-                    </div>
-                `;
-                
-                setTimeout(() => {
+            const form = document.getElementById('reportForm');
+            const preview = document.getElementById('reportPreview');
+            
+            form.addEventListener('change', function() {
+                // In a real app, you would update the preview based on form values
+                const reportName = form.elements['name'].value;
+                if (reportName) {
                     preview.innerHTML = `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i> Report generated successfully!
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Preview for "${reportName}"
                         </div>
-                        <div class="text-center py-3">
-                            <i class="fas fa-chart-pie fa-4x text-info mb-3"></i>
-                            <h5>${reportData.name}</h5>
-                            <p class="text-muted">Preview of your generated report</p>
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-3x text-info mb-3"></i>
+                            <p>Report preview will be generated when saved</p>
                         </div>
                     `;
-                    
-                    setTimeout(() => {
-                        alert('Report saved successfully!');
-                        window.location.href = 'read.html';
-                    }, 1000);
-                }, 2000);
+                }
             });
         });
     </script>

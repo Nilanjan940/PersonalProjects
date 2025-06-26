@@ -1,3 +1,45 @@
+<?php
+session_start();
+require_once __DIR__ . '../../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input
+    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+    $tax_id = filter_input(INPUT_POST, 'tax_id', FILTER_SANITIZE_STRING);
+    $contact_person = filter_input(INPUT_POST, 'contact_person', FILTER_SANITIZE_STRING);
+    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+    $website = filter_input(INPUT_POST, 'website', FILTER_SANITIZE_URL);
+    $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING);
+    $notes = filter_input(INPUT_POST, 'notes', FILTER_SANITIZE_STRING);
+
+    try {
+        $pdo->beginTransaction();
+        
+        // Insert supplier
+        $stmt = $pdo->prepare("INSERT INTO suppliers (name, contact_person, email, phone, address, tax_id, website) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $contact_person, $email, $phone, $address, $tax_id, $website]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Supplier added successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error adding supplier: " . $e->getMessage();
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +62,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -33,7 +74,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -49,7 +89,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Form Styles */
         .supplier-form {
             max-width: 800px;
             margin: 0 auto;
@@ -73,7 +112,6 @@
             border-radius: 8px;
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -84,15 +122,11 @@
             .sidebar-toggle {
                 display: block;
             }
-            
-            .supplier-form {
-                padding: 20px;
-            }
         }
         
         @media (max-width: 768px) {
             .supplier-form {
-                padding: 15px;
+                padding: 20px;
             }
             
             h1 {
@@ -114,15 +148,19 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-truck me-2"></i>Add New Supplier</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Suppliers
                     </a>
                 </div>
 
                 <div class="supplier-form">
-                    <form id="supplierForm">
+                    <form method="POST" action="create.php">
                         <div class="text-center mb-4">
                             <img src="https://via.placeholder.com/120x120?text=Logo" class="logo-preview mb-2" id="logoPreview">
                             <div>
@@ -136,11 +174,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Supplier Name*</label>
-                                <input type="text" class="form-control" id="supplierName" required>
+                                <input type="text" name="name" class="form-control" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Tax ID/VAT Number</label>
-                                <input type="text" class="form-control" id="taxId">
+                                <input type="text" name="tax_id" class="form-control">
                             </div>
                         </div>
 
@@ -149,37 +187,33 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Contact Person*</label>
-                                    <input type="text" class="form-control" id="contactPerson" required>
+                                    <input type="text" name="contact_person" class="form-control" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone Number*</label>
-                                    <input type="tel" class="form-control" id="phone" required>
+                                    <input type="tel" name="phone" class="form-control" required>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Email*</label>
-                                    <input type="email" class="form-control" id="email" required>
+                                    <input type="email" name="email" class="form-control" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Website</label>
-                                    <input type="url" class="form-control" id="website" placeholder="https://">
+                                    <input type="url" name="website" class="form-control" placeholder="https://">
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Full Address*</label>
-                            <textarea class="form-control" id="address" rows="3" required></textarea>
+                            <textarea class="form-control" name="address" rows="3" required></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Products Supplied</label>
-                            <select class="form-select" id="products" multiple>
-                                <option>Steel Plates</option>
-                                <option>Electrical Components</option>
-                                <option>Hydraulic Parts</option>
-                            </select>
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="2"></textarea>
                         </div>
 
                         <div class="d-grid d-md-flex justify-content-md-end gap-2">
@@ -256,53 +290,20 @@
             }
         }
 
-        // Form functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Logo upload preview
-            document.getElementById('uploadLogoBtn').addEventListener('click', function() {
-                document.getElementById('logoUpload').click();
-            });
+        // Logo upload preview
+        document.getElementById('uploadLogoBtn').addEventListener('click', function() {
+            document.getElementById('logoUpload').click();
+        });
 
-            document.getElementById('logoUpload').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        document.getElementById('logoPreview').src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            // Form submission
-            document.getElementById('supplierForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form values
-                const supplierData = {
-                    name: document.getElementById('supplierName').value,
-                    taxId: document.getElementById('taxId').value,
-                    contactPerson: document.getElementById('contactPerson').value,
-                    phone: document.getElementById('phone').value,
-                    email: document.getElementById('email').value,
-                    website: document.getElementById('website').value,
-                    address: document.getElementById('address').value,
-                    products: Array.from(document.getElementById('products').selectedOptions).map(option => option.value),
-                    logo: document.getElementById('logoPreview').src
+        document.getElementById('logoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('logoPreview').src = event.target.result;
                 };
-                
-                // Validate form
-                if (!supplierData.name || !supplierData.contactPerson || !supplierData.phone || !supplierData.email || !supplierData.address) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
-                
-                // In a real application, you would make an API call here
-                console.log('Saving supplier:', supplierData);
-                
-                alert('Supplier added successfully!');
-                window.location.href = 'read.html';
-            });
+                reader.readAsDataURL(file);
+            }
         });
     </script>
 </body>

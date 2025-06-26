@@ -1,3 +1,59 @@
+<?php
+session_start();
+require_once __DIR__ . '../../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input
+    $product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+    $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
+    $unit_price = filter_input(INPUT_POST, 'unit_price', FILTER_VALIDATE_FLOAT);
+    $location = filter_input(INPUT_POST, 'location', FILTER_SANITIZE_STRING);
+    $shelf = filter_input(INPUT_POST, 'shelf', FILTER_SANITIZE_STRING);
+    $reorder_level = filter_input(INPUT_POST, 'reorder_level', FILTER_VALIDATE_INT);
+    $expiry_date = filter_input(INPUT_POST, 'expiry_date', FILTER_SANITIZE_STRING);
+    $notes = filter_input(INPUT_POST, 'notes', FILTER_SANITIZE_STRING);
+
+    try {
+        $pdo->beginTransaction();
+        
+        // Insert into inventory
+        $stmt = $pdo->prepare("INSERT INTO inventory (product_id, quantity, location, last_updated) 
+                              VALUES (?, ?, ?, NOW())");
+        $stmt->execute([$product_id, $quantity, $location]);
+        
+        // Update product reorder level if provided
+        if ($reorder_level) {
+            $stmt = $pdo->prepare("UPDATE products SET reorder_level = ? WHERE product_id = ?");
+            $stmt->execute([$reorder_level, $product_id]);
+        }
+        
+        // Log transaction
+        $stmt = $pdo->prepare("INSERT INTO transactions (product_id, user_id, transaction_type, quantity, notes) 
+                              VALUES (?, ?, 'in', ?, ?)");
+        $stmt->execute([$product_id, $_SESSION['user_id'], $quantity, $notes]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Inventory item added successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error adding inventory item: " . $e->getMessage();
+    }
+}
+
+// Get products for dropdown
+$products = $pdo->query("SELECT product_id, name, sku FROM products ORDER BY name")->fetchAll();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +76,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -33,7 +88,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -49,7 +103,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Form Styles */
         .inventory-form {
             max-width: 800px;
             margin: 0 auto;
@@ -65,7 +118,6 @@
             margin-bottom: 25px;
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -102,41 +154,44 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-boxes me-2"></i>Add Inventory Item</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Inventory
                     </a>
                 </div>
 
                 <div class="inventory-form">
-                    <form id="inventoryForm">
+                    <form method="POST" action="create.php">
                         <div class="form-section">
                             <h4><i class="fas fa-info-circle me-2"></i>Item Information</h4>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Product*</label>
-                                    <select class="form-select" required>
+                                    <select class="form-select" name="product_id" required>
                                         <option value="">Select Product</option>
-                                        <option>Steel Plates</option>
-                                        <option>Hydraulic Pumps</option>
+                                        <?php foreach ($products as $product): ?>
+                                            <option value="<?= $product['product_id'] ?>">
+                                                <?= htmlspecialchars($product['name']) ?> (<?= htmlspecialchars($product['sku']) ?>)
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">SKU*</label>
-                                    <input type="text" class="form-control" required>
+                                    <label class="form-label">Quantity*</label>
+                                    <input type="number" name="quantity" class="form-control" required>
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Quantity*</label>
-                                    <input type="number" class="form-control" required>
-                                </div>
-                                <div class="col-md-6">
                                     <label class="form-label">Unit Price*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" step="0.01" class="form-control" required>
+                                        <input type="number" step="0.01" name="unit_price" class="form-control" required>
                                     </div>
                                 </div>
                             </div>
@@ -147,15 +202,15 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Warehouse*</label>
-                                    <select class="form-select" required>
+                                    <select class="form-select" name="location" required>
                                         <option value="">Select Warehouse</option>
-                                        <option>Warehouse A</option>
-                                        <option>Warehouse B</option>
+                                        <option value="Warehouse A">Warehouse A</option>
+                                        <option value="Warehouse B">Warehouse B</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Shelf/Bin Location</label>
-                                    <input type="text" class="form-control">
+                                    <input type="text" name="shelf" class="form-control">
                                 </div>
                             </div>
                         </div>
@@ -165,16 +220,16 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Reorder Level</label>
-                                    <input type="number" class="form-control">
+                                    <input type="number" name="reorder_level" class="form-control">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Expiry Date</label>
-                                    <input type="date" class="form-control">
+                                    <input type="date" name="expiry_date" class="form-control">
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Notes</label>
-                                <textarea class="form-control" rows="3"></textarea>
+                                <textarea class="form-control" name="notes" rows="3"></textarea>
                             </div>
                         </div>
 
@@ -251,14 +306,6 @@
                 }
             }
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('inventoryForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                alert('Inventory item added successfully!');
-                window.location.href = 'read.html';
-            });
-        });
     </script>
 </body>
 </html>

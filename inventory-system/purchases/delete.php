@@ -1,3 +1,82 @@
+<?php
+session_start();
+require_once __DIR__ . '../../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Check if PO ID is provided
+if (!isset($_GET['id'])) {
+    header('Location: read.php');
+    exit();
+}
+
+$po_id = (int)$_GET['id'];
+
+// Get PO data
+$stmt = $pdo->prepare("SELECT po.*, s.name as supplier_name 
+                      FROM purchase_orders po
+                      LEFT JOIN suppliers s ON po.supplier_id = s.supplier_id
+                      WHERE po.po_id = ?");
+$stmt->execute([$po_id]);
+$purchase_order = $stmt->fetch();
+
+if (!$purchase_order) {
+    header('Location: read.php');
+    exit();
+}
+
+// Get PO items
+$stmt = $pdo->prepare("SELECT poi.*, p.name as product_name, p.sku 
+                      FROM po_items poi
+                      LEFT JOIN products p ON poi.product_id = p.product_id
+                      WHERE poi.po_id = ?");
+$stmt->execute([$po_id]);
+$po_items = $stmt->fetchAll();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
+    $other_reason = filter_input(INPUT_POST, 'other_reason', FILTER_SANITIZE_STRING);
+    
+    try {
+        $pdo->beginTransaction();
+        
+        // Update PO status to cancelled
+        $stmt = $pdo->prepare("UPDATE purchase_orders SET status = 'cancelled', notes = CONCAT(notes, '\nCancellation Reason: ', ?) 
+                              WHERE po_id = ?");
+        $stmt->execute([$reason === 'Other' ? $other_reason : $reason, $po_id]);
+        
+        // Remove received items from inventory
+        foreach ($po_items as $item) {
+            if ($item['received_quantity'] > 0) {
+                $stmt = $pdo->prepare("UPDATE inventory SET quantity = quantity - ? 
+                                      WHERE product_id = ?");
+                $stmt->execute([$item['received_quantity'], $item['product_id']]);
+            }
+        }
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Purchase order cancelled successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error cancelling purchase order: " . $e->getMessage();
+    }
+}
+
+// Calculate total amount
+$total_amount = 0;
+foreach ($po_items as $item) {
+    $total_amount += $item['quantity'] * $item['unit_price'];
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +100,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -34,7 +112,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -50,7 +127,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Confirmation Panel */
         .confirmation-panel {
             max-width: 800px;
             margin: 0 auto;
@@ -89,7 +165,6 @@
             opacity: 0.65;
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -103,10 +178,6 @@
         }
         
         @media (max-width: 768px) {
-            .confirmation-panel {
-                padding: 20px;
-            }
-            
             h1 {
                 font-size: 1.75rem;
             }
@@ -126,9 +197,13 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-times-circle me-2 text-danger"></i>Cancel Purchase Order</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Orders
                     </a>
                 </div>
@@ -141,17 +216,34 @@
 
                     <div class="po-details">
                         <div class="text-center mb-3">
-                            <h3>PO-2023-1001</h3>
-                            <p class="text-muted">Issued: 2023-10-15 | Supplier: SteelCo Inc.</p>
+                            <h3>PO-<?= htmlspecialchars($purchase_order['po_id']) ?></h3>
+                            <p class="text-muted">
+                                Issued: <?= date('Y-m-d', strtotime($purchase_order['order_date'])) ?> | 
+                                Supplier: <?= htmlspecialchars($purchase_order['supplier_name']) ?>
+                            </p>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Status:</strong> <span class="badge bg-primary">Partially Received</span></p>
-                                <p><strong>Total Value:</strong> $1,474.40</p>
+                                <p><strong>Status:</strong> 
+                                    <?php 
+                                    $badge_class = '';
+                                    switch ($purchase_order['status']) {
+                                        case 'draft': $badge_class = 'badge-draft'; break;
+                                        case 'ordered': $badge_class = 'badge-ordered'; break;
+                                        case 'received': $badge_class = 'badge-received'; break;
+                                        case 'cancelled': $badge_class = 'badge-cancelled'; break;
+                                        case 'partial': $badge_class = 'badge-partial'; break;
+                                    }
+                                    ?>
+                                    <span class="status-badge <?= $badge_class ?>">
+                                        <?= ucfirst($purchase_order['status']) ?>
+                                    </span>
+                                </p>
+                                <p><strong>Total Value:</strong> $<?= number_format($total_amount, 2) ?></p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Items:</strong> 2</p>
-                                <p><strong>Last Updated:</strong> 2023-10-16</p>
+                                <p><strong>Items:</strong> <?= count($po_items) ?></p>
+                                <p><strong>Last Updated:</strong> <?= date('Y-m-d', strtotime($purchase_order['updated_at'])) ?></p>
                             </div>
                         </div>
                     </div>
@@ -159,43 +251,59 @@
                     <div class="mb-4">
                         <h5><i class="fas fa-exclamation-circle text-warning me-2"></i>This will affect:</h5>
                         <ul class="impact-list">
-                            <li><i class="fas fa-undo text-danger me-2"></i> 10 Steel Plates will be removed from inventory</li>
+                            <?php 
+                            $received_items = array_filter($po_items, function($item) {
+                                return $item['received_quantity'] > 0;
+                            });
+                            ?>
+                            <?php if (count($received_items) > 0): ?>
+                                <?php foreach ($received_items as $item): ?>
+                                    <li><i class="fas fa-undo text-danger me-2"></i> 
+                                        <?= $item['received_quantity'] ?> <?= htmlspecialchars($item['product_name']) ?> 
+                                        will be removed from inventory
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <li><i class="fas fa-info-circle text-primary me-2"></i> No items have been received yet</li>
+                            <?php endif; ?>
                             <li><i class="fas fa-file-invoice text-danger me-2"></i> Accounting records will be updated</li>
                             <li><i class="fas fa-envelope text-danger me-2"></i> Supplier will be notified automatically</li>
                         </ul>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Cancellation Reason*</label>
-                        <select class="form-select" id="cancelReason" required>
-                            <option value="">Select reason</option>
-                            <option>No longer needed</option>
-                            <option>Found better price</option>
-                            <option>Supplier issue</option>
-                            <option>Other (specify below)</option>
-                        </select>
-                    </div>
+                    <form method="POST" action="cancel.php?id=<?= $po_id ?>">
+                        <div class="mb-4">
+                            <label class="form-label">Cancellation Reason*</label>
+                            <select class="form-select" id="cancelReason" name="reason" required>
+                                <option value="">Select reason</option>
+                                <option value="No longer needed">No longer needed</option>
+                                <option value="Found better price">Found better price</option>
+                                <option value="Supplier issue">Supplier issue</option>
+                                <option value="Other">Other (specify below)</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-4" id="otherReasonContainer" style="display: none;">
-                        <label class="form-label">Please specify reason</label>
-                        <textarea class="form-control" rows="3" id="otherReason"></textarea>
-                    </div>
+                        <div class="mb-4" id="otherReasonContainer" style="display: none;">
+                            <label class="form-label">Please specify reason*</label>
+                            <textarea class="form-control" rows="3" name="other_reason" id="otherReason"></textarea>
+                        </div>
 
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="confirmCancel" required>
-                        <label class="form-check-label" for="confirmCancel">
-                            I understand this action cannot be undone
-                        </label>
-                    </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirmCancel" required>
+                            <label class="form-check-label" for="confirmCancel">
+                                I understand this action cannot be undone
+                            </label>
+                        </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="read.html" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i> Cancel
-                        </a>
-                        <button class="btn btn-danger btn-delete" id="confirmBtn" disabled>
-                            <i class="fas fa-trash-alt me-1"></i> Confirm Cancellation
-                        </button>
-                    </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="read.php" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            <button class="btn btn-danger btn-delete" id="confirmBtn" disabled>
+                                <i class="fas fa-trash-alt me-1"></i> Confirm Cancellation
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -269,7 +377,7 @@
 
             // Show/hide other reason field
             cancelReason.addEventListener('change', function() {
-                otherReasonContainer.style.display = this.value === 'Other (specify below)' ? 'block' : 'none';
+                otherReasonContainer.style.display = this.value === 'Other' ? 'block' : 'none';
                 updateConfirmButton();
             });
 
@@ -279,36 +387,15 @@
             
             function updateConfirmButton() {
                 const reasonValid = cancelReason.value && 
-                                  (cancelReason.value !== 'Other (specify below)' || 
+                                  (cancelReason.value !== 'Other' || 
                                    document.getElementById('otherReason').value.trim());
                 confirmBtn.disabled = !(reasonValid && confirmCheckbox.checked);
             }
 
             // Form submission
-            confirmBtn.addEventListener('click', function() {
-                if (confirm('Final confirmation: Cancel this purchase order and reverse all transactions?')) {
-                    // Show loading state
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing...';
-                    this.disabled = true;
-                    
-                    // Get cancellation reason
-                    const reason = cancelReason.value === 'Other (specify below)' 
-                        ? document.getElementById('otherReason').value 
-                        : cancelReason.value;
-                    
-                    // In a real application, you would make an API call here
-                    console.log('Cancelling PO:', {
-                        poNumber: 'PO-2023-1001',
-                        reason,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Simulate cancellation process
-                    setTimeout(function() {
-                        alert('Purchase order cancelled successfully!');
-                        window.location.href = 'read.html';
-                    }, 1500);
+            confirmBtn.addEventListener('click', function(e) {
+                if (!confirm('Final confirmation: Cancel this purchase order and reverse all transactions?')) {
+                    e.preventDefault();
                 }
             });
         });

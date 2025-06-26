@@ -1,3 +1,68 @@
+<?php
+session_start();
+require_once __DIR__ . '/../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Check if report ID is provided
+if (!isset($_GET['id'])) {
+    header('Location: read.php');
+    exit();
+}
+
+$report_id = $_GET['id'];
+
+// Fetch report data
+$stmt = $pdo->prepare("SELECT r.*, u.username as created_by 
+                      FROM reports r
+                      LEFT JOIN users u ON r.created_by = u.user_id
+                      WHERE r.report_id = ?");
+$stmt->execute([$report_id]);
+$report = $stmt->fetch();
+
+if (!$report) {
+    $_SESSION['error_message'] = "Report not found";
+    header('Location: read.php');
+    exit();
+}
+
+// Fetch report formats
+$stmt = $pdo->prepare("SELECT format FROM report_formats WHERE report_id = ?");
+$stmt->execute([$report_id]);
+$formats = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
+    $other_reason = filter_input(INPUT_POST, 'other_reason', FILTER_SANITIZE_STRING);
+    
+    try {
+        $pdo->beginTransaction();
+        
+        // Delete report formats
+        $stmt = $pdo->prepare("DELETE FROM report_formats WHERE report_id = ?");
+        $stmt->execute([$report_id]);
+        
+        // Delete report
+        $stmt = $pdo->prepare("DELETE FROM reports WHERE report_id = ?");
+        $stmt->execute([$report_id]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Report deleted successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error deleting report: " . $e->getMessage();
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +86,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -34,7 +98,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -50,7 +113,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Delete Confirmation Styles */
         .confirmation-panel {
             max-width: 600px;
             margin: 0 auto;
@@ -90,15 +152,6 @@
             color: var(--danger);
         }
         
-        .btn-delete {
-            transition: all 0.3s;
-        }
-        
-        .btn-delete:disabled {
-            opacity: 0.65;
-        }
-        
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -135,9 +188,13 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-trash-alt me-2 text-danger"></i>Delete Report</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Reports
                     </a>
                 </div>
@@ -150,17 +207,17 @@
 
                     <div class="report-details">
                         <div class="text-center mb-3">
-                            <h3 id="reportName">October 2023 Inventory Summary</h3>
-                            <p class="text-muted" id="reportId">Report ID: REP-2023-1001</p>
+                            <h3><?= htmlspecialchars($report['name']) ?></h3>
+                            <p class="text-muted">Report ID: <?= $report_id ?></p>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Type:</strong> <span id="reportType">Inventory Summary</span></p>
-                                <p><strong>Created:</strong> <span id="reportCreated">2023-11-01</span></p>
+                                <p><strong>Type:</strong> <?= ucfirst($report['type']) ?></p>
+                                <p><strong>Created:</strong> <?= date('Y-m-d', strtotime($report['created_at'])) ?></p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Last Generated:</strong> <span id="lastGenerated">2023-11-01</span></p>
-                                <p><strong>Formats:</strong> <span id="reportFormats">PDF, Excel</span></p>
+                                <p><strong>Created By:</strong> <?= htmlspecialchars($report['created_by']) ?></p>
+                                <p><strong>Formats:</strong> <?= implode(", ", array_map('strtoupper', $formats)) ?></p>
                             </div>
                         </div>
                     </div>
@@ -180,44 +237,42 @@
                                 <span class="impact-icon"><i class="fas fa-database"></i></span>
                                 Report configuration and history
                             </li>
-                            <li>
-                                <span class="impact-icon"><i class="fas fa-bell-slash"></i></span>
-                                Any scheduled generation tasks
-                            </li>
                         </ul>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Reason for Deletion*</label>
-                        <select class="form-select" id="deleteReason" required>
-                            <option value="">Select a reason</option>
-                            <option>Report no longer needed</option>
-                            <option>Data is outdated</option>
-                            <option>Duplicate report</option>
-                            <option>Other (please specify)</option>
-                        </select>
-                    </div>
+                    <form method="POST" action="delete.php?id=<?= $report_id ?>">
+                        <div class="mb-4">
+                            <label class="form-label">Reason for Deletion*</label>
+                            <select class="form-select" name="reason" id="deleteReason" required>
+                                <option value="">Select a reason</option>
+                                <option value="no_longer_needed">Report no longer needed</option>
+                                <option value="outdated">Data is outdated</option>
+                                <option value="duplicate">Duplicate report</option>
+                                <option value="other">Other (please specify)</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-4" id="otherReasonContainer" style="display: none;">
-                        <label class="form-label">Please specify reason</label>
-                        <textarea class="form-control" rows="2" id="otherReason"></textarea>
-                    </div>
+                        <div class="mb-4" id="otherReasonContainer" style="display: none;">
+                            <label class="form-label">Please specify reason</label>
+                            <textarea class="form-control" rows="2" name="other_reason" id="otherReason"></textarea>
+                        </div>
 
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
-                        <label class="form-check-label" for="confirmDelete">
-                            I understand this action is permanent and cannot be undone
-                        </label>
-                    </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                I understand this action is permanent and cannot be undone
+                            </label>
+                        </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="read.html" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i> Cancel
-                        </a>
-                        <button class="btn btn-danger btn-delete" id="deleteBtn" disabled>
-                            <i class="fas fa-trash-alt me-1"></i> Permanently Delete Report
-                        </button>
-                    </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="read.php" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            <button class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-trash-alt me-1"></i> Permanently Delete Report
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -283,37 +338,8 @@
             }
         }
 
-        // Report deletion functionality
+        // Delete confirmation functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Get report ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const reportId = urlParams.get('id');
-            
-            if (reportId) {
-                document.getElementById('reportId').textContent = `Report ID: ${reportId}`;
-                
-                // In a real application, you would fetch report data from an API
-                // Here we'll simulate fetching report data
-                setTimeout(() => {
-                    // This would be replaced with actual API call
-                    const mockReport = {
-                        id: reportId,
-                        name: "October 2023 Inventory Summary",
-                        type: "Inventory Summary",
-                        created: "2023-10-25",
-                        lastGenerated: "2023-11-01",
-                        formats: ["PDF", "Excel"]
-                    };
-                    
-                    // Populate report details
-                    document.getElementById('reportName').textContent = mockReport.name;
-                    document.getElementById('reportType').textContent = mockReport.type;
-                    document.getElementById('reportCreated').textContent = mockReport.created;
-                    document.getElementById('lastGenerated').textContent = mockReport.lastGenerated;
-                    document.getElementById('reportFormats').textContent = mockReport.formats.join(", ");
-                }, 300);
-            }
-            
             const deleteReason = document.getElementById('deleteReason');
             const otherReasonContainer = document.getElementById('otherReasonContainer');
             const confirmCheckbox = document.getElementById('confirmDelete');
@@ -321,7 +347,7 @@
 
             // Show/hide other reason field
             deleteReason.addEventListener('change', function() {
-                otherReasonContainer.style.display = this.value === 'Other (please specify)' ? 'block' : 'none';
+                otherReasonContainer.style.display = this.value === 'other' ? 'block' : 'none';
                 updateDeleteButton();
             });
 
@@ -330,38 +356,10 @@
             
             function updateDeleteButton() {
                 const reasonValid = deleteReason.value && 
-                                  (deleteReason.value !== 'Other (please specify)' || 
+                                  (deleteReason.value !== 'other' || 
                                    document.getElementById('otherReason').value.trim());
                 deleteBtn.disabled = !(reasonValid && confirmCheckbox.checked);
             }
-
-            // Delete confirmation
-            deleteBtn.addEventListener('click', function() {
-                if (confirm('Final confirmation: Permanently delete this report and all its data?')) {
-                    // Show loading state
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
-                    this.disabled = true;
-                    
-                    // Get deletion reason
-                    const reason = deleteReason.value === 'Other (please specify)' 
-                        ? document.getElementById('otherReason').value 
-                        : deleteReason.value;
-                    
-                    // In a real application, you would make an API call here
-                    console.log('Deleting report:', {
-                        reportId,
-                        reason,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Simulate deletion process
-                    setTimeout(function() {
-                        alert('Report deleted successfully!');
-                        window.location.href = 'read.html';
-                    }, 1500);
-                }
-            });
 
             // Validate other reason field if shown
             document.getElementById('otherReason')?.addEventListener('input', updateDeleteButton);

@@ -1,3 +1,75 @@
+<?php
+session_start();
+require_once __DIR__ . '../../config/database.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit();
+}
+
+// Check if ID is provided
+if (!isset($_GET['id'])) {
+    $_SESSION['error_message'] = "No supplier specified for deletion.";
+    header('Location: read.php');
+    exit();
+}
+
+$supplier_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+// Get supplier details
+$stmt = $pdo->prepare("SELECT * FROM suppliers WHERE supplier_id = ?");
+$stmt->execute([$supplier_id]);
+$supplier = $stmt->fetch();
+
+if (!$supplier) {
+    $_SESSION['error_message'] = "Supplier not found.";
+    header('Location: read.php');
+    exit();
+}
+
+// Get product count for this supplier
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE supplier_id = ?");
+$stmt->execute([$supplier_id]);
+$product_count = $stmt->fetchColumn();
+
+// Get pending order count
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM purchase_orders WHERE supplier_id = ? AND status = 'ordered'");
+$stmt->execute([$supplier_id]);
+$pending_orders = $stmt->fetchColumn();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
+    $notes = filter_input(INPUT_POST, 'notes', FILTER_SANITIZE_STRING);
+
+    try {
+        $pdo->beginTransaction();
+        
+        // First, update products to remove supplier reference
+        $stmt = $pdo->prepare("UPDATE products SET supplier_id = NULL WHERE supplier_id = ?");
+        $stmt->execute([$supplier_id]);
+        
+        // Cancel pending orders
+        $stmt = $pdo->prepare("UPDATE purchase_orders SET status = 'cancelled' WHERE supplier_id = ? AND status = 'ordered'");
+        $stmt->execute([$supplier_id]);
+        
+        // Delete supplier
+        $stmt = $pdo->prepare("DELETE FROM suppliers WHERE supplier_id = ?");
+        $stmt->execute([$supplier_id]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success_message'] = "Supplier deleted successfully!";
+        header('Location: read.php');
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $error_message = "Error deleting supplier: " . $e->getMessage();
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +94,6 @@
             overflow-x: hidden;
         }
         
-        /* Main Content */
         .main-content {
             margin-left: 250px;
             transition: all 0.3s;
@@ -35,7 +106,6 @@
             width: calc(100% - 70px);
         }
         
-        /* Toggle Button */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -51,7 +121,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        /* Delete Confirmation Styles */
         .confirmation-panel {
             max-width: 600px;
             margin: 0 auto;
@@ -91,7 +160,6 @@
             color: var(--danger);
         }
         
-        /* Responsive Styles */
         @media (max-width: 992px) {
             .main-content {
                 margin-left: 0 !important;
@@ -102,15 +170,11 @@
             .sidebar-toggle {
                 display: block;
             }
-            
-            .confirmation-panel {
-                padding: 20px;
-            }
         }
         
         @media (max-width: 768px) {
             .confirmation-panel {
-                padding: 15px;
+                padding: 20px;
             }
             
             h1 {
@@ -132,9 +196,13 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container py-5">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+                
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="fas fa-trash-alt me-2"></i>Delete Supplier</h1>
-                    <a href="read.html" class="btn btn-outline-secondary">
+                    <a href="read.php" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Back to Suppliers
                     </a>
                 </div>
@@ -147,18 +215,18 @@
 
                     <div class="supplier-details">
                         <div class="text-center mb-3">
-                            <img src="https://via.placeholder.com/100x100?text=SC" id="supplierLogo" class="rounded-circle mb-2" width="80">
-                            <h3 id="supplierName">SteelCo Inc.</h3>
-                            <p class="text-muted" id="supplierId">Supplier ID: SUP-1001</p>
+                            <img src="https://via.placeholder.com/100x100?text=<?= substr($supplier['name'], 0, 2) ?>" class="rounded-circle mb-2" width="80">
+                            <h3><?= htmlspecialchars($supplier['name']) ?></h3>
+                            <p class="text-muted">Supplier ID: SUP-<?= $supplier['supplier_id'] ?></p>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Contact:</strong> <span id="supplierContact">John Smith</span></p>
-                                <p><strong>Email:</strong> <span id="supplierEmail">john@steelco.com</span></p>
+                                <p><strong>Contact:</strong> <?= htmlspecialchars($supplier['contact_person']) ?></p>
+                                <p><strong>Email:</strong> <?= htmlspecialchars($supplier['email']) ?></p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Products:</strong> <span id="supplierProducts">24</span></p>
-                                <p><strong>Last Order:</strong> <span id="lastOrder">2023-10-15</span></p>
+                                <p><strong>Products:</strong> <?= $product_count ?></p>
+                                <p><strong>Since:</strong> <?= date('Y-m-d', strtotime($supplier['created_at'])) ?></p>
                             </div>
                         </div>
                     </div>
@@ -168,11 +236,11 @@
                         <ul class="impact-list">
                             <li>
                                 <span class="impact-icon"><i class="fas fa-box"></i></span>
-                                <span id="productsAffected">24</span> associated products will lose supplier reference
+                                <?= $product_count ?> associated products will lose supplier reference
                             </li>
                             <li>
                                 <span class="impact-icon"><i class="fas fa-file-invoice"></i></span>
-                                <span id="ordersAffected">15</span> pending purchase orders will be canceled
+                                <?= $pending_orders ?> pending purchase orders will be canceled
                             </li>
                             <li>
                                 <span class="impact-icon"><i class="fas fa-history"></i></span>
@@ -185,40 +253,42 @@
                         <i class="fas fa-info-circle me-2"></i> Consider deactivating the supplier instead to preserve records.
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Reason for Deletion*</label>
-                        <select class="form-select" id="deleteReason" required>
-                            <option value="">Select a reason</option>
-                            <option>Supplier no longer in business</option>
-                            <option>Quality issues</option>
-                            <option>Contract terminated</option>
-                            <option>Other (please specify)</option>
-                        </select>
-                    </div>
+                    <form method="POST" action="delete.php?id=<?= $supplier_id ?>">
+                        <div class="mb-4">
+                            <label class="form-label">Reason for Deletion*</label>
+                            <select class="form-select" name="reason" id="deleteReason" required>
+                                <option value="">Select a reason</option>
+                                <option>Supplier no longer in business</option>
+                                <option>Quality issues</option>
+                                <option>Contract terminated</option>
+                                <option>Other (please specify)</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-4" id="otherReasonContainer" style="display: none;">
-                        <label class="form-label">Please specify reason*</label>
-                        <textarea class="form-control" id="otherReason" rows="2" required></textarea>
-                    </div>
+                        <div class="mb-4" id="otherReasonContainer" style="display: none;">
+                            <label class="form-label">Please specify reason*</label>
+                            <textarea class="form-control" name="notes" id="otherReason" rows="2" required></textarea>
+                        </div>
 
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
-                                <label class="form-check-label" for="confirmDelete">
-                                    I understand this cannot be undone
-                                </label>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                    <label class="form-check-label" for="confirmDelete">
+                                        I understand this cannot be undone
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="read.php" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </a>
+                                <button class="btn btn-danger" id="deleteBtn" disabled>
+                                    <i class="fas fa-trash-alt me-1"></i> Permanently Delete
+                                </button>
                             </div>
                         </div>
-                        <div>
-                            <a href="read.html" class="btn btn-secondary me-2">
-                                <i class="fas fa-times me-1"></i> Cancel
-                            </a>
-                            <button class="btn btn-danger" id="deleteBtn" disabled>
-                                <i class="fas fa-trash-alt me-1"></i> Permanently Delete
-                            </button>
-                        </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -284,42 +354,7 @@
             }
         }
 
-        // Supplier deletion functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Get supplier ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const supplierId = urlParams.get('id');
-            
-            if (supplierId) {
-                document.getElementById('supplierId').textContent = `Supplier ID: ${supplierId}`;
-                
-                // In a real application, you would fetch supplier data from an API
-                // Here we'll simulate fetching supplier data
-                setTimeout(() => {
-                    // This would be replaced with actual API call
-                    const mockSupplier = {
-                        id: supplierId,
-                        name: "SteelCo Inc.",
-                        logo: "https://via.placeholder.com/100x100?text=SC",
-                        contact: "John Smith",
-                        email: "john@steelco.com",
-                        products: 24,
-                        pendingOrders: 15,
-                        lastOrder: "2023-10-15"
-                    };
-                    
-                    // Populate supplier details
-                    document.getElementById('supplierName').textContent = mockSupplier.name;
-                    document.getElementById('supplierLogo').src = mockSupplier.logo;
-                    document.getElementById('supplierContact').textContent = mockSupplier.contact;
-                    document.getElementById('supplierEmail').textContent = mockSupplier.email;
-                    document.getElementById('supplierProducts').textContent = mockSupplier.products;
-                    document.getElementById('lastOrder').textContent = mockSupplier.lastOrder;
-                    document.getElementById('productsAffected').textContent = mockSupplier.products;
-                    document.getElementById('ordersAffected').textContent = mockSupplier.pendingOrders;
-                }, 300);
-            }
-            
             const deleteReason = document.getElementById('deleteReason');
             const otherReasonContainer = document.getElementById('otherReasonContainer');
             const confirmCheckbox = document.getElementById('confirmDelete');
@@ -340,34 +375,6 @@
                                    document.getElementById('otherReason').value.trim());
                 deleteBtn.disabled = !(reasonValid && confirmCheckbox.checked);
             }
-
-            // Delete confirmation
-            deleteBtn.addEventListener('click', function() {
-                if (confirm('Final confirmation: Delete this supplier and all associated data?')) {
-                    // Show loading state
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...';
-                    this.disabled = true;
-                    
-                    // Get deletion reason
-                    const reason = deleteReason.value === 'Other (please specify)' 
-                        ? document.getElementById('otherReason').value 
-                        : deleteReason.value;
-                    
-                    // In a real application, you would make an API call here
-                    console.log('Deleting supplier:', {
-                        supplierId,
-                        reason,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Simulate deletion process
-                    setTimeout(function() {
-                        alert('Supplier deleted successfully!');
-                        window.location.href = 'read.html';
-                    }, 1500);
-                }
-            });
 
             // Validate other reason field if shown
             document.getElementById('otherReason')?.addEventListener('input', updateDeleteButton);

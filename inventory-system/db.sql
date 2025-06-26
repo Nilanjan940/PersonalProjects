@@ -148,3 +148,65 @@ INSERT INTO transactions (product_id, user_id, transaction_type, quantity, refer
 (1, 2, 'out', 2, 'SALE-001', 'Sold to customer'),
 (2, 2, 'out', 5, 'SALE-001', 'Sold to customer'),
 (4, 3, 'out', 3, 'INT-001', 'Internal use');
+
+-- Reports table
+CREATE TABLE reports (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type ENUM('inventory', 'purchases', 'suppliers', 'custom') NOT NULL,
+    time_period VARCHAR(50) NOT NULL,
+    chart_type ENUM('bar', 'pie', 'line', 'none') DEFAULT 'none',
+    notes TEXT,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(user_id)
+);
+
+-- Report formats table
+CREATE TABLE report_formats (
+    report_format_id INT AUTO_INCREMENT PRIMARY KEY,
+    report_id INT NOT NULL,
+    format ENUM('pdf', 'excel', 'html') NOT NULL,
+    FOREIGN KEY (report_id) REFERENCES reports(report_id) ON DELETE CASCADE
+);
+
+-- Report filters (for category/supplier filters)
+CREATE TABLE report_filters (
+    filter_id INT AUTO_INCREMENT PRIMARY KEY,
+    report_id INT NOT NULL,
+    filter_type ENUM('category', 'supplier') NOT NULL,
+    filter_value INT NOT NULL,
+    FOREIGN KEY (report_id) REFERENCES reports(report_id) ON DELETE CASCADE
+);
+
+-- Report data points (for chart configuration)
+CREATE TABLE report_data_points (
+    data_point_id INT AUTO_INCREMENT PRIMARY KEY,
+    report_id INT NOT NULL,
+    data_point ENUM('quantity', 'value', 'category') NOT NULL,
+    FOREIGN KEY (report_id) REFERENCES reports(report_id) ON DELETE CASCADE
+);
+
+-- Report schedules (optional - for scheduled reports)
+CREATE TABLE report_schedules (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    report_id INT NOT NULL,
+    frequency ENUM('daily', 'weekly', 'monthly', 'quarterly') NOT NULL,
+    next_run DATETIME NOT NULL,
+    recipients TEXT,
+    active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (report_id) REFERENCES reports(report_id) ON DELETE CASCADE
+);
+
+-- Report logs (track report generation history)
+CREATE TABLE report_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    report_id INT NOT NULL,
+    user_id INT NOT NULL,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    format ENUM('pdf', 'excel', 'html') NOT NULL,
+    file_path VARCHAR(255),
+    FOREIGN KEY (report_id) REFERENCES reports(report_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
