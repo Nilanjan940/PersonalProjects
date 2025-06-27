@@ -166,7 +166,7 @@ $products = $pdo->query("SELECT product_id, name, sku FROM products ORDER BY nam
                 </div>
 
                 <div class="inventory-form">
-                    <form method="POST" action="create.php">
+                    <form method="POST" action="create.php" enctype="multipart/form-data">
                         <div class="form-section">
                             <h4><i class="fas fa-info-circle me-2"></i>Item Information</h4>
                             <div class="row mb-3">
