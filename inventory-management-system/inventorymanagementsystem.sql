@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.1
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1:3306
--- Generation Time: Mar 16, 2025 at 10:26 AM
--- Server version: 5.7.36
--- PHP Version: 7.4.26
+-- Host: 127.0.0.1
+-- Generation Time: Jul 02, 2025 at 04:10 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -16,8 +16,7 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
-CREATE DATABASE inventorymanagementsystem;
-USE inventorymanagementsystem;
+
 --
 -- Database: `inventorymanagementsystem`
 --
@@ -28,14 +27,12 @@ USE inventorymanagementsystem;
 -- Table structure for table `audittrails`
 --
 
-DROP TABLE IF EXISTS `audittrails`;
-CREATE TABLE IF NOT EXISTS `audittrails` (
-  `id` int(200) NOT NULL AUTO_INCREMENT,
-  `datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE `audittrails` (
+  `id` int(200) NOT NULL,
+  `datetime` timestamp NOT NULL DEFAULT current_timestamp(),
   `username` varchar(250) NOT NULL,
-  `action` varchar(250) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=724 DEFAULT CHARSET=latin1;
+  `action` varchar(250) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `audittrails`
@@ -262,7 +259,20 @@ INSERT INTO `audittrails` (`id`, `datetime`, `username`, `action`) VALUES
 (586, '2023-11-15 14:56:39', 'admin3', 'Add Product: ArtLine MarkerPen'),
 (587, '2023-11-15 15:15:37', 'admin3', 'Delete Product: hehehhea'),
 (588, '2023-11-15 15:22:24', 'admin3', 'Logout'),
-(589, '2023-11-15 15:22:30', 'admin2', 'Login');
+(589, '2023-11-15 15:22:30', 'admin2', 'Login'),
+(724, '2025-06-29 14:48:01', 'harzixuan', 'Login'),
+(725, '2025-06-29 14:50:50', 'harzixuan', 'Logout'),
+(726, '2025-06-29 14:56:43', 'harzixuan', 'Login'),
+(727, '2025-06-29 17:14:43', 'harzixuan', 'Logout'),
+(728, '2025-06-29 17:14:58', 'harzixuan', 'Login'),
+(729, '2025-06-30 14:53:31', 'harzixuan', 'Login'),
+(730, '2025-06-30 15:06:02', 'harzixuan', 'Transfer 8 of Metal Spoon to new location'),
+(731, '2025-06-30 15:06:23', 'harzixuan', 'Transfer 9 of ArtLine MarkerPen to Aeon Tebrau'),
+(732, '2025-06-30 20:31:23', 'harzixuan', 'Logout'),
+(733, '2025-07-01 08:37:45', 'harzixuan', 'Login'),
+(734, '2025-07-01 16:32:07', 'harzixuan', 'Add Product: coffee'),
+(735, '2025-07-02 14:01:01', 'harzixuan', 'Login'),
+(736, '2025-07-02 14:02:22', 'harzixuan', 'Logout');
 
 -- --------------------------------------------------------
 
@@ -270,13 +280,11 @@ INSERT INTO `audittrails` (`id`, `datetime`, `username`, `action`) VALUES
 -- Table structure for table `category`
 --
 
-DROP TABLE IF EXISTS `category`;
-CREATE TABLE IF NOT EXISTS `category` (
+CREATE TABLE `category` (
   `categoryid` varchar(250) NOT NULL,
   `categoryname` varchar(250) NOT NULL,
-  `categorydescription` varchar(250) NOT NULL,
-  PRIMARY KEY (`categoryid`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+  `categorydescription` varchar(250) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `category`
@@ -294,20 +302,18 @@ INSERT INTO `category` (`categoryid`, `categoryname`, `categorydescription`) VAL
 -- Table structure for table `companyprofile`
 --
 
-DROP TABLE IF EXISTS `companyprofile`;
-CREATE TABLE IF NOT EXISTS `companyprofile` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `companyprofile` (
+  `id` int(11) NOT NULL,
   `name` varchar(250) NOT NULL,
-  `profilepicture` varchar(1000) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+  `profilepicture` varchar(1000) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `companyprofile`
 --
 
 INSERT INTO `companyprofile` (`id`, `name`, `profilepicture`) VALUES
-(1, 'WinG', 'picture/CompanyLogo.png');
+(1, 'InduStock', 'picture/industock.png');
 
 -- --------------------------------------------------------
 
@@ -315,17 +321,15 @@ INSERT INTO `companyprofile` (`id`, `name`, `profilepicture`) VALUES
 -- Table structure for table `deliverorder`
 --
 
-DROP TABLE IF EXISTS `deliverorder`;
-CREATE TABLE IF NOT EXISTS `deliverorder` (
-  `id` int(250) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `deliverorder` (
+  `id` int(250) NOT NULL,
   `productid` varchar(250) NOT NULL,
   `name` varchar(250) NOT NULL,
   `quantity` int(250) NOT NULL,
   `unitprice` int(255) NOT NULL,
   `location` varchar(200) NOT NULL,
-  `addeddate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=53 DEFAULT CHARSET=latin1;
+  `addeddate` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `deliverorder`
@@ -345,7 +349,9 @@ INSERT INTO `deliverorder` (`id`, `productid`, `name`, `quantity`, `unitprice`, 
 (42, 'SB01', 'Cat school bag', 4, 49, 'Aeon Bukit Indah', '2023-11-15 20:00:15'),
 (41, 'MP02', 'ArtLine MarkerPen', 7, 2, 'Aeon Bukit Indah', '2023-11-15 19:58:21'),
 (40, 'C02', 'Metal Spoon', 10, 3, 'Aeon Tebrau', '2023-11-15 19:45:06'),
-(39, 'C02', 'Metal Spoon', 10, 3, 'Aeon Tebrau', '2023-11-15 16:58:11');
+(39, 'C02', 'Metal Spoon', 10, 3, 'Aeon Tebrau', '2023-11-15 16:58:11'),
+(53, 'C02', 'Metal Spoon', 8, 3, 'new location', '2025-06-30 15:06:02'),
+(54, 'MP01', 'ArtLine MarkerPen', 9, 2, 'Aeon Tebrau', '2025-06-30 15:06:23');
 
 -- --------------------------------------------------------
 
@@ -353,8 +359,7 @@ INSERT INTO `deliverorder` (`id`, `productid`, `name`, `quantity`, `unitprice`, 
 -- Table structure for table `inventory`
 --
 
-DROP TABLE IF EXISTS `inventory`;
-CREATE TABLE IF NOT EXISTS `inventory` (
+CREATE TABLE `inventory` (
   `id` varchar(200) NOT NULL,
   `name` varchar(200) NOT NULL,
   `quantity` int(20) NOT NULL,
@@ -364,28 +369,28 @@ CREATE TABLE IF NOT EXISTS `inventory` (
   `category` varchar(200) NOT NULL,
   `status` varchar(200) NOT NULL,
   `image` varchar(200) NOT NULL,
-  `addeddate` timestamp NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+  `addeddate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `inventory`
 --
 
 INSERT INTO `inventory` (`id`, `name`, `quantity`, `unitprice`, `variant`, `description`, `category`, `status`, `image`, `addeddate`) VALUES
-('C02', 'Metal Spoon', 8, '3.00', '', 'Cooking tools, stainless steel spoons', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '2023-11-15 07:37:49'),
-('MP01', 'ArtLine MarkerPen', 9, '2.00', 'Red', 'Precision, vibrant colors, quick-drying, waterproof, ergonomic design.', 'Stationary', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', '2023-11-15 06:55:44'),
-('MP02', 'ArtLine MarkerPen', 7, '2.00', 'Blue', 'Precision, vibrant colors, quick-drying, waterproof, ergonomic design.', 'Stationary', 'Active', 'picture/artline-100-marker-pen-blue.jpg', '2023-11-15 06:56:39'),
-('TOY05', 'Gru Toy', 10, '10.00', 'Gru', 'Gru toy despicable me', 'Toy', 'Active', 'picture/gru.jpg', '2023-11-16 21:35:16'),
-('TOY02', 'Monkey toy', 99, '50.00', '', 'Squish easily, made of rubber', 'Toy', 'Active', 'picture/monke.jpeg', '2023-11-15 17:20:21'),
-('COO2', 'Metal Spatula', 6, '10.00', '', 'Made of stainless steel', 'Cooking tools', 'Active', 'picture/spatula.jpg', '2023-11-15 11:48:49'),
-('PC01', 'Pencil Case', 79, '3.00', '', 'Among us theme pencil case, black color', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '2023-11-15 17:13:33'),
-('654f', 'hi', 3, '44.00', '', 'd', 'Shoes', 'Active', 'picture/apple juice.jpg', '2024-03-13 07:56:31'),
-('TOY03', 'Disney lego', 77, '20.00', '', 'Goofy and donald duck disney lego', 'Toy', 'Active', 'picture/disney lego.jpg', '2023-11-15 17:24:00'),
-('S04', 'Faber Castle earser', 50, '2.00', '', 'Faber Casttle Dust Free Earser', 'Stationary', 'Active', 'picture/FABER-CASTELL.jpg', '2023-11-15 17:25:33'),
-('BAG01', 'Bag', 20, '50.00', 'blue', 'cat blur bag', 'Stationary', 'Active', 'picture/cat school bag.jpg', '2023-11-15 23:06:14'),
-('BAG02', 'Bag', 20, '50.00', 'yellow', 'cat blur bag', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', '2023-11-15 23:07:01'),
-('ji', 'diijd', 2, '55.00', 'red', 'w', 'Shoes', 'Active', 'picture/17 kills.png', '2024-03-13 08:01:13');
+('C02', 'Metal Spoon', 0, 3.00, '', 'Cooking tools, stainless steel spoons', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '2025-06-30 15:06:02'),
+('MP01', 'ArtLine MarkerPen', 0, 2.00, 'Red', 'Precision, vibrant colors, quick-drying, waterproof, ergonomic design.', 'Stationary', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', '2025-06-30 15:06:23'),
+('MP02', 'ArtLine MarkerPen', 7, 2.00, 'Blue', 'Precision, vibrant colors, quick-drying, waterproof, ergonomic design.', 'Stationary', 'Active', 'picture/artline-100-marker-pen-blue.jpg', '2023-11-15 06:56:39'),
+('TOY05', 'Gru Toy', 10, 10.00, 'Gru', 'Gru toy despicable me', 'Toy', 'Active', 'picture/gru.jpg', '2023-11-16 21:35:16'),
+('TOY02', 'Monkey toy', 99, 50.00, '', 'Squish easily, made of rubber', 'Toy', 'Active', 'picture/monke.jpeg', '2023-11-15 17:20:21'),
+('COO2', 'Metal Spatula', 6, 10.00, '', 'Made of stainless steel', 'Cooking tools', 'Active', 'picture/spatula.jpg', '2023-11-15 11:48:49'),
+('PC01', 'Pencil Case', 79, 3.00, '', 'Among us theme pencil case, black color', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '2023-11-15 17:13:33'),
+('654f', 'hi', 3, 44.00, '', 'd', 'Shoes', 'Active', 'picture/apple juice.jpg', '2024-03-13 07:56:31'),
+('TOY03', 'Disney lego', 77, 20.00, '', 'Goofy and donald duck disney lego', 'Toy', 'Active', 'picture/disney lego.jpg', '2023-11-15 17:24:00'),
+('S04', 'Faber Castle earser', 50, 2.00, '', 'Faber Casttle Dust Free Earser', 'Stationary', 'Active', 'picture/FABER-CASTELL.jpg', '2023-11-15 17:25:33'),
+('BAG01', 'Bag', 20, 50.00, 'blue', 'cat blur bag', 'Stationary', 'Active', 'picture/cat school bag.jpg', '2023-11-15 23:06:14'),
+('BAG02', 'Bag', 20, 50.00, 'yellow', 'cat blur bag', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', '2023-11-15 23:07:01'),
+('ji', 'diijd', 2, 55.00, 'red', 'w', 'Shoes', 'Active', 'picture/17 kills.png', '2024-03-13 08:01:13'),
+('BC01', 'coffee', 1, 3.00, 'red', 'homemade coffee', 'Cooking tools', 'Active', 'picture/black top.jpeg', '2025-07-01 13:02:07');
 
 -- --------------------------------------------------------
 
@@ -393,13 +398,11 @@ INSERT INTO `inventory` (`id`, `name`, `quantity`, `unitprice`, `variant`, `desc
 -- Table structure for table `location`
 --
 
-DROP TABLE IF EXISTS `location`;
-CREATE TABLE IF NOT EXISTS `location` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `location` (
+  `id` int(11) NOT NULL,
   `name` varchar(250) NOT NULL,
-  `address` varchar(250) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+  `address` varchar(250) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `location`
@@ -416,14 +419,12 @@ INSERT INTO `location` (`id`, `name`, `address`) VALUES
 -- Table structure for table `loginouthistory`
 --
 
-DROP TABLE IF EXISTS `loginouthistory`;
-CREATE TABLE IF NOT EXISTS `loginouthistory` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `loginouthistory` (
+  `id` int(11) NOT NULL,
   `username` varchar(11) NOT NULL,
-  `login` timestamp NOT NULL,
-  `logout` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=148 DEFAULT CHARSET=latin1;
+  `login` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `logout` timestamp NULL DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `loginouthistory`
@@ -460,7 +461,11 @@ INSERT INTO `loginouthistory` (`id`, `username`, `login`, `logout`) VALUES
 (120, 'admin2', '2023-11-16 00:38:25', '2023-11-16 01:17:03'),
 (119, 'admin2', '2023-11-16 00:37:39', '2023-11-16 00:37:56'),
 (118, 'admin2', '2023-11-16 00:33:38', '2023-11-16 00:37:36'),
-(117, 'admin2', '2023-11-15 15:22:30', '2023-11-15 19:56:54');
+(117, 'admin2', '2023-11-15 15:22:30', '2023-11-15 19:56:54'),
+(148, 'harzixuan', '2025-06-29 14:50:50', '2025-06-29 14:50:50'),
+(149, 'harzixuan', '2025-06-29 17:14:43', '2025-06-29 17:14:43'),
+(150, 'harzixuan', '2025-06-30 20:31:23', '2025-06-30 20:31:23'),
+(151, 'harzixuan', '2025-07-02 14:02:22', '2025-07-02 14:02:22');
 
 -- --------------------------------------------------------
 
@@ -468,9 +473,8 @@ INSERT INTO `loginouthistory` (`id`, `username`, `login`, `logout`) VALUES
 -- Table structure for table `report`
 --
 
-DROP TABLE IF EXISTS `report`;
-CREATE TABLE IF NOT EXISTS `report` (
-  `mainid` int(250) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `report` (
+  `mainid` int(250) NOT NULL,
   `id` varchar(10) NOT NULL,
   `name` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL,
@@ -481,70 +485,72 @@ CREATE TABLE IF NOT EXISTS `report` (
   `image` varchar(250) NOT NULL,
   `variant` varchar(255) NOT NULL,
   `Action` varchar(250) NOT NULL,
-  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`mainid`)
-) ENGINE=MyISAM AUTO_INCREMENT=269 DEFAULT CHARSET=latin1;
+  `date` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `report`
 --
 
 INSERT INTO `report` (`mainid`, `id`, `name`, `quantity`, `unitprice`, `description`, `category`, `status`, `image`, `variant`, `Action`, `date`) VALUES
-(268, 'C02', 'Metal Spoon', 2, '3.00', '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2024-03-13 16:04:40'),
-(267, 'ji', 'diijd', 2, '55.00', '', 'Shoes', 'Active', 'picture/17 kills.png', 'red', 'Added to inventory', '2024-03-13 16:01:13'),
-(266, '654f', 'hi', 3, '44.00', '', 'Shoes', 'Active', 'picture/apple juice.jpg', '', 'Added to inventory', '2024-03-13 15:56:31'),
-(265, 'TOY05', 'Gru Toy', 10, '10.00', '', 'Toy', 'Active', 'picture/gru.jpg', 'Gru', 'Added to inventory', '2023-11-17 05:35:16'),
-(264, '7654', 'yhyh', 77, '66.00', '', 'Cooking tools', 'Active', 'picture/gru.jpg', 'hi', 'Added to inventory', '2023-11-17 05:33:18'),
-(263, 'C02', 'Metal Spoon', 10, '3.00', '', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 2 to 10', '2023-11-17 05:13:59'),
-(262, 'P01', 'M&G pencil', 20, '5.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 07:09:47'),
-(261, 'BAG02', 'Bag', 20, '50.00', '', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', 'yellow', 'Added to inventory', '2023-11-16 07:07:01'),
-(260, 'BAG01', 'Bag', 20, '50.00', '', 'Stationary', 'Active', 'picture/cat school bag.jpg', 'blue', 'Added to inventory', '2023-11-16 07:06:14'),
-(258, 'TOY01', 'GRU TOY', 99, '10.00', '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Added to inventory', '2023-11-16 05:57:07'),
-(259, 'MP01', 'ArtLine MarkerPen', 3, '2.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 06:29:43'),
-(257, 'TOY01', 'Gru Toy', 10, '10.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 03:32:35'),
-(255, 'SB1', 'school bag', 10, '20.00', '', 'Stationary', 'Active', 'picture/cat school bag.jpg', 'blue', 'Added to inventory', '2023-11-16 03:29:16'),
-(256, 'SB02', 'school bag', 10, '20.00', '', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', 'Yellow', 'Added to inventory', '2023-11-16 03:30:11'),
-(254, 'C02', 'Metal Spoon', 10, '3.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 02:22:22'),
-(253, 'CO03', 'Rice cooker', 70, '40.00', '', 'Cooking tools', 'Active', 'picture/Rice cooker.jpg', '', 'Added to inventory', '2023-11-16 01:32:43'),
-(251, 'TOY03', 'Disney lego', 77, '20.00', '', 'Toy', 'Active', 'picture/disney lego.jpg', '', 'Added to inventory', '2023-11-16 01:24:00'),
-(252, 'S04', 'Faber Castle earser', 50, '2.00', '', 'Stationary', 'Active', 'picture/FABER-CASTELL.jpg', '', 'Added to inventory', '2023-11-16 01:25:33'),
-(250, 'C02', 'Metal Spoon', 12, '3.00', '', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-16 01:21:17'),
-(249, 'TOY02', 'Monkey toy', 99, '50.00', '', 'Toy', 'Active', 'picture/monke.jpeg', '', 'Added to inventory', '2023-11-16 01:20:21'),
-(247, 'C02', 'Metal Spoon', 12, '3.00', '', 'Toy', 'Active', 'picture/Emoji school bag.jpg', '', 'Product edited', '2023-11-16 01:18:45'),
-(248, 'C02', 'Metal Spoon', 12, '3.00', '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-16 01:19:00'),
-(246, 'PC01', 'Pencil Case', 79, '3.00', '', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '', 'Product edited', '2023-11-16 01:16:36'),
-(245, 'PC25', 'Amongus Pencil Case', 79, '22.00', '', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '', 'Product edited', '2023-11-16 01:14:47'),
-(244, 'SB01', 'Cat school bag', 5, '49.00', '', 'Stationary', 'Active', 'picture/cat school bag.jpg', '', 'Product edited', '2023-11-16 01:14:43'),
-(243, 'P01', 'M&G pencil', 50, '5.00', '', 'Stationary', 'Active', 'picture/M&G 2B Pencil.jpg', '', 'Product edited', '2023-11-16 01:14:38'),
-(242, 'MP02', 'ArtLine MarkerPen', 7, '2.00', '', 'Stationary', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Product edited', '2023-11-16 01:14:16'),
-(241, 'MP01', 'ArtLine MarkerPen', 12, '2.00', '', 'Stationary', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Product edited', '2023-11-16 01:13:50'),
-(240, 'PC25', 'Amongus Pencil Case', 79, '22.00', '', 'Stationery', 'Active', 'picture/Pencil case.jpeg', '', 'Added to inventory', '2023-11-16 01:13:33'),
-(239, 'TOY01', 'Gru Toy', 21, '10.00', '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Quantity changed from 40 to 21', '2023-11-16 01:04:53'),
-(238, 'C02', 'Metal Spoon', 12, '3.00', '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 20 to 12', '2023-11-16 01:04:22'),
-(237, 'P01', 'M&G pencil', 50, '5.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:57:52'),
-(236, 'MP02', 'ArtLine MarkerPen', 42, '2.00', '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-16 00:57:35'),
-(235, 'MP01', 'ArtLine MarkerPen', 42, '2.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:55:01'),
-(234, 'MP01', 'ArtLine MarkerPen', 2, '2.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:45:10'),
-(233, 'C02', 'Metal Spoon', 20, '3.00', '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 10 to 20', '2023-11-16 00:44:01'),
-(232, 'TOY01', 'Gru Toy', 10, '10.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:36:56'),
-(231, 'SB01', 'Cat school bag', 4, '49.00', '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-15 20:00:15'),
-(230, 'TOY01', 'Gru Toy', 50, '10.00', '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Quantity changed from 242 to 50', '2023-11-15 19:59:23'),
-(229, 'MP02', 'ArtLine MarkerPen', 7, '2.00', '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-15 19:58:21'),
-(228, 'COO2', 'Metal Spatula', 6, '10.00', '', 'Cooking tools', 'Active', 'picture/spatula.jpg', '', 'Added to inventory', '2023-11-15 19:48:49'),
-(227, 'C02', 'Metal Spoon', 10, '3.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-15 19:45:06'),
-(226, 'C02', 'Metal Spoon', 10, '3.00', '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-15 16:58:11'),
-(225, 'TOY01', 'Gru Toy', 242, '10.00', '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Product edited', '2023-11-15 16:49:34'),
-(224, 'C02', 'Metal Spoon', 30, '3.00', '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-15 16:48:47'),
-(223, 'C02', 'Metal Spoon', 30, '3.00', '', '', 'Active', 'picture/spoonx.jpg', 'metal', 'Product edited', '2023-11-15 16:48:38'),
-(214, 'MP01', 'ArtLine MarkerPen', 56, '2.00', '', 'meow', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Added to inventory', '2023-11-15 14:55:44'),
-(215, 'MP02', 'ArtLine MarkerPen', 56, '2.00', '', 'meow', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Added to inventory', '2023-11-15 14:56:39'),
-(216, 'SB01', 'Cat school bag', 9, '49.00', '', 'Stationery', 'Active', 'picture/cat school bag.jpg', '', 'Added to inventory', '2023-11-15 15:27:09'),
-(217, 'P01', 'M&amp;G pencil', 100, '5.00', '', 'Stationery', 'Active', 'picture/M&G 2B Pencil.jpg', '', 'Added to inventory', '2023-11-15 15:32:25'),
-(218, 'DOLL01', 'Gru Toy', 242, '50.00', '', 'Toys', 'Active', 'picture/gru.jpg', '', 'Added to inventory', '2023-11-15 15:35:37'),
-(219, 'TOY01', 'Gru Toy', 242, '10.00', '', 'Toys', 'Active', 'picture/gru.jpg', '', 'Product edited', '2023-11-15 15:36:26'),
-(220, 'C02', 'Metal Spoon', 30, '3.00', '', 'Toys', 'Active', 'picture/spoonx.jpg', '', 'Added to inventory', '2023-11-15 15:37:49'),
-(221, 'MP01', 'ArtLine MarkerPen', 56, '2.00', '', 'Stationery', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Product edited', '2023-11-15 15:38:13'),
-(222, 'MP02', 'ArtLine MarkerPen', 56, '2.00', '', 'Stationery', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Product edited', '2023-11-15 15:38:18');
+(268, 'C02', 'Metal Spoon', 2, 3.00, '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2024-03-13 16:04:40'),
+(267, 'ji', 'diijd', 2, 55.00, '', 'Shoes', 'Active', 'picture/17 kills.png', 'red', 'Added to inventory', '2024-03-13 16:01:13'),
+(266, '654f', 'hi', 3, 44.00, '', 'Shoes', 'Active', 'picture/apple juice.jpg', '', 'Added to inventory', '2024-03-13 15:56:31'),
+(265, 'TOY05', 'Gru Toy', 10, 10.00, '', 'Toy', 'Active', 'picture/gru.jpg', 'Gru', 'Added to inventory', '2023-11-17 05:35:16'),
+(264, '7654', 'yhyh', 77, 66.00, '', 'Cooking tools', 'Active', 'picture/gru.jpg', 'hi', 'Added to inventory', '2023-11-17 05:33:18'),
+(263, 'C02', 'Metal Spoon', 10, 3.00, '', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 2 to 10', '2023-11-17 05:13:59'),
+(262, 'P01', 'M&G pencil', 20, 5.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 07:09:47'),
+(261, 'BAG02', 'Bag', 20, 50.00, '', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', 'yellow', 'Added to inventory', '2023-11-16 07:07:01'),
+(260, 'BAG01', 'Bag', 20, 50.00, '', 'Stationary', 'Active', 'picture/cat school bag.jpg', 'blue', 'Added to inventory', '2023-11-16 07:06:14'),
+(258, 'TOY01', 'GRU TOY', 99, 10.00, '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Added to inventory', '2023-11-16 05:57:07'),
+(259, 'MP01', 'ArtLine MarkerPen', 3, 2.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 06:29:43'),
+(257, 'TOY01', 'Gru Toy', 10, 10.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 03:32:35'),
+(255, 'SB1', 'school bag', 10, 20.00, '', 'Stationary', 'Active', 'picture/cat school bag.jpg', 'blue', 'Added to inventory', '2023-11-16 03:29:16'),
+(256, 'SB02', 'school bag', 10, 20.00, '', 'Stationary', 'Active', 'picture/Emoji school bag.jpg', 'Yellow', 'Added to inventory', '2023-11-16 03:30:11'),
+(254, 'C02', 'Metal Spoon', 10, 3.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 02:22:22'),
+(253, 'CO03', 'Rice cooker', 70, 40.00, '', 'Cooking tools', 'Active', 'picture/Rice cooker.jpg', '', 'Added to inventory', '2023-11-16 01:32:43'),
+(251, 'TOY03', 'Disney lego', 77, 20.00, '', 'Toy', 'Active', 'picture/disney lego.jpg', '', 'Added to inventory', '2023-11-16 01:24:00'),
+(252, 'S04', 'Faber Castle earser', 50, 2.00, '', 'Stationary', 'Active', 'picture/FABER-CASTELL.jpg', '', 'Added to inventory', '2023-11-16 01:25:33'),
+(250, 'C02', 'Metal Spoon', 12, 3.00, '', 'Cooking tools', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-16 01:21:17'),
+(249, 'TOY02', 'Monkey toy', 99, 50.00, '', 'Toy', 'Active', 'picture/monke.jpeg', '', 'Added to inventory', '2023-11-16 01:20:21'),
+(247, 'C02', 'Metal Spoon', 12, 3.00, '', 'Toy', 'Active', 'picture/Emoji school bag.jpg', '', 'Product edited', '2023-11-16 01:18:45'),
+(248, 'C02', 'Metal Spoon', 12, 3.00, '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-16 01:19:00'),
+(246, 'PC01', 'Pencil Case', 79, 3.00, '', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '', 'Product edited', '2023-11-16 01:16:36'),
+(245, 'PC25', 'Amongus Pencil Case', 79, 22.00, '', 'Stationary', 'Active', 'picture/Pencil case.jpeg', '', 'Product edited', '2023-11-16 01:14:47'),
+(244, 'SB01', 'Cat school bag', 5, 49.00, '', 'Stationary', 'Active', 'picture/cat school bag.jpg', '', 'Product edited', '2023-11-16 01:14:43'),
+(243, 'P01', 'M&G pencil', 50, 5.00, '', 'Stationary', 'Active', 'picture/M&G 2B Pencil.jpg', '', 'Product edited', '2023-11-16 01:14:38'),
+(242, 'MP02', 'ArtLine MarkerPen', 7, 2.00, '', 'Stationary', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Product edited', '2023-11-16 01:14:16'),
+(241, 'MP01', 'ArtLine MarkerPen', 12, 2.00, '', 'Stationary', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Product edited', '2023-11-16 01:13:50'),
+(240, 'PC25', 'Amongus Pencil Case', 79, 22.00, '', 'Stationery', 'Active', 'picture/Pencil case.jpeg', '', 'Added to inventory', '2023-11-16 01:13:33'),
+(239, 'TOY01', 'Gru Toy', 21, 10.00, '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Quantity changed from 40 to 21', '2023-11-16 01:04:53'),
+(238, 'C02', 'Metal Spoon', 12, 3.00, '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 20 to 12', '2023-11-16 01:04:22'),
+(237, 'P01', 'M&G pencil', 50, 5.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:57:52'),
+(236, 'MP02', 'ArtLine MarkerPen', 42, 2.00, '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-16 00:57:35'),
+(235, 'MP01', 'ArtLine MarkerPen', 42, 2.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:55:01'),
+(234, 'MP01', 'ArtLine MarkerPen', 2, 2.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:45:10'),
+(233, 'C02', 'Metal Spoon', 20, 3.00, '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Quantity changed from 10 to 20', '2023-11-16 00:44:01'),
+(232, 'TOY01', 'Gru Toy', 10, 10.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-16 00:36:56'),
+(231, 'SB01', 'Cat school bag', 4, 49.00, '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-15 20:00:15'),
+(230, 'TOY01', 'Gru Toy', 50, 10.00, '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Quantity changed from 242 to 50', '2023-11-15 19:59:23'),
+(229, 'MP02', 'ArtLine MarkerPen', 7, 2.00, '', 'Transfer product to Aeon Bukit Indah', 'Active', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', 'Transfer product to Aeon Bukit Indah', '2023-11-15 19:58:21'),
+(228, 'COO2', 'Metal Spatula', 6, 10.00, '', 'Cooking tools', 'Active', 'picture/spatula.jpg', '', 'Added to inventory', '2023-11-15 19:48:49'),
+(227, 'C02', 'Metal Spoon', 10, 3.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-15 19:45:06'),
+(226, 'C02', 'Metal Spoon', 10, 3.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2023-11-15 16:58:11'),
+(225, 'TOY01', 'Gru Toy', 242, 10.00, '', 'Toy', 'Active', 'picture/gru.jpg', '', 'Product edited', '2023-11-15 16:49:34'),
+(224, 'C02', 'Metal Spoon', 30, 3.00, '', 'Toy', 'Active', 'picture/spoonx.jpg', '', 'Product edited', '2023-11-15 16:48:47'),
+(223, 'C02', 'Metal Spoon', 30, 3.00, '', '', 'Active', 'picture/spoonx.jpg', 'metal', 'Product edited', '2023-11-15 16:48:38'),
+(214, 'MP01', 'ArtLine MarkerPen', 56, 2.00, '', 'meow', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Added to inventory', '2023-11-15 14:55:44'),
+(215, 'MP02', 'ArtLine MarkerPen', 56, 2.00, '', 'meow', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Added to inventory', '2023-11-15 14:56:39'),
+(216, 'SB01', 'Cat school bag', 9, 49.00, '', 'Stationery', 'Active', 'picture/cat school bag.jpg', '', 'Added to inventory', '2023-11-15 15:27:09'),
+(217, 'P01', 'M&amp;G pencil', 100, 5.00, '', 'Stationery', 'Active', 'picture/M&G 2B Pencil.jpg', '', 'Added to inventory', '2023-11-15 15:32:25'),
+(218, 'DOLL01', 'Gru Toy', 242, 50.00, '', 'Toys', 'Active', 'picture/gru.jpg', '', 'Added to inventory', '2023-11-15 15:35:37'),
+(219, 'TOY01', 'Gru Toy', 242, 10.00, '', 'Toys', 'Active', 'picture/gru.jpg', '', 'Product edited', '2023-11-15 15:36:26'),
+(220, 'C02', 'Metal Spoon', 30, 3.00, '', 'Toys', 'Active', 'picture/spoonx.jpg', '', 'Added to inventory', '2023-11-15 15:37:49'),
+(221, 'MP01', 'ArtLine MarkerPen', 56, 2.00, '', 'Stationery', 'Active', 'picture/Artline 100 Permanent Marker Pen - Red.jpeg', 'Red', 'Product edited', '2023-11-15 15:38:13'),
+(222, 'MP02', 'ArtLine MarkerPen', 56, 2.00, '', 'Stationery', 'Active', 'picture/artline-100-marker-pen-blue.jpg', 'Blue', 'Product edited', '2023-11-15 15:38:18'),
+(269, 'C02', 'Metal Spoon', 8, 3.00, '', 'Transfer product to new location', 'Active', 'Transfer product to new location', 'Transfer product to new location', 'Transfer product to new location', '2025-06-30 15:06:02'),
+(270, 'MP01', 'ArtLine MarkerPen', 9, 2.00, '', 'Transfer product to Aeon Tebrau', 'Active', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', 'Transfer product to Aeon Tebrau', '2025-06-30 15:06:23'),
+(271, 'BC01', 'coffee', 1, 3.00, '', 'Cooking tools', 'Active', 'picture/black top.jpeg', 'red', 'Added to inventory', '2025-07-01 16:32:07');
 
 -- --------------------------------------------------------
 
@@ -552,14 +558,12 @@ INSERT INTO `report` (`mainid`, `id`, `name`, `quantity`, `unitprice`, `descript
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `passw` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=27 DEFAULT CHARSET=latin1;
+  `name` varchar(255) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `users`
@@ -567,7 +571,111 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 INSERT INTO `users` (`id`, `username`, `passw`, `name`) VALUES
 (26, 'admin1', '$2y$10$QywZo8z/lgMkJDHpVx1nXu40/bAQv4BXB31nm.bvMMtlkPcl9Zafy', 'admin1'),
-(24, 'harzixuan', '$2y$10$RrOZNJeKFrNN7a80pwc7Jurxd/tT7DgXZXpnz59NcZKx9H9mUbMuK', 'harzixuan');
+(27, 'nilanjan', '$2y$10$gRvjyE4dzwjxmE9QHAarW.fUjHm58U3/juSo6w.yk0qmJDWWv8zHS', 'nilanjan');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `audittrails`
+--
+ALTER TABLE `audittrails`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `category`
+--
+ALTER TABLE `category`
+  ADD PRIMARY KEY (`categoryid`);
+
+--
+-- Indexes for table `companyprofile`
+--
+ALTER TABLE `companyprofile`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `deliverorder`
+--
+ALTER TABLE `deliverorder`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `inventory`
+--
+ALTER TABLE `inventory`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `location`
+--
+ALTER TABLE `location`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `loginouthistory`
+--
+ALTER TABLE `loginouthistory`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `report`
+--
+ALTER TABLE `report`
+  ADD PRIMARY KEY (`mainid`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `audittrails`
+--
+ALTER TABLE `audittrails`
+  MODIFY `id` int(200) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=737;
+
+--
+-- AUTO_INCREMENT for table `companyprofile`
+--
+ALTER TABLE `companyprofile`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `deliverorder`
+--
+ALTER TABLE `deliverorder`
+  MODIFY `id` int(250) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+
+--
+-- AUTO_INCREMENT for table `location`
+--
+ALTER TABLE `location`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT for table `loginouthistory`
+--
+ALTER TABLE `loginouthistory`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=152;
+
+--
+-- AUTO_INCREMENT for table `report`
+--
+ALTER TABLE `report`
+  MODIFY `mainid` int(250) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=272;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

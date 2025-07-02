@@ -28,10 +28,9 @@ Before setting up the project, make sure the following are installed:
 3. Clone the repository:
 
    ```bash
-   git clone https://github.com/YOUR-GITHUB-USERNAME/inventory-management-system.git
+   git clone https://github.com/Nilanjan940/inventory-management-system.git
    ```
 
-   > Replace `YOUR-GITHUB-USERNAME` with your actual GitHub username.
 
 ---
 
