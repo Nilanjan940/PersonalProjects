@@ -12,7 +12,6 @@ $postsPerPage = 6;
 
 // Get featured post
 $featuredPost = getFeaturedPost($conn);
-
 // Get latest posts
 $latestPosts = getLatestPosts($conn, $currentPage, $postsPerPage);
 $totalPosts = getTotalPublishedPosts($conn);

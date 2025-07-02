@@ -1,7 +1,7 @@
 <?php
-require_once 'config/constants.php';
-require_once 'config/database.php';
-require_once 'functions/auth.php';
+require_once __DIR__ .'config/constants.php';
+require_once __DIR__ .'config/database.php';
+require_once __DIR__ .'functions/auth.php';
 
 $db = new Database();
 $conn = $db->getConnection();
