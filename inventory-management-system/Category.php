@@ -82,11 +82,7 @@ $companyName = $companyProfile['name'];
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <title>Category</title>
-    <script src="https://cdn.jsdelivr.net/picturefill/2.3.1/picturefill.min.js"></script>
-    <script src="https://cdn.rawgit.com/sachinchoolur/lightgallery.js/master/dist/js/lightgallery-all.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.rawgit.com/sachinchoolur/lightgallery.js/master/dist/css/lightgallery.min.css">
     <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
-    <script src="https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
         <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
             <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
@@ -103,7 +99,6 @@ $companyName = $companyProfile['name'];
 <nav>
     <div class="logo">
         <div class="logo-image">
-            <!-- Display the company profile image fetched from the database -->
             <?php
             if (!empty($companyProfileImagePath)) {
                 echo '<img src="' . $companyProfileImagePath . '" alt="Company Logo" class="logoimage">';
@@ -186,46 +181,38 @@ $companyName = $companyProfile['name'];
     <div class="content-wrapper">
         <div class="container">
             <div class="row">
-                <div class="col-md-12" style="display:flex;">
+                <div class="col-md-12 d-flex justify-content-between align-items-center">
                     <h2><ion-icon name="grid"></ion-icon> Category</h2>
-                    <a href="addcategory.php" class="allButton" style="margin-left:auto; background-color:#4F46E5; border-color:#4F46E5;"><b>Add Category</b></a>
+                    <a href="addcategory.php" class="btn btn-success btn-sm">
+                        <ion-icon name="add-circle-outline"></ion-icon> Add Category
+                    </a>
                 </div>
             </div>
 
             <?php if ($successDelete): ?>
-                <div class="alert alert-success d-flex align-items-center" role="alert" style="margin-top:20px;">
+                <div class="alert alert-success d-flex align-items-center alert-dismissible fade show" role="alert">
                     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
-                    <div>
-                        <?php echo $successDeleteMessage; ?>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="margin-left:auto;"></button>
+                    <div><?php echo $successDeleteMessage; ?></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>
 
             <?php if ($successEdit): ?>
-                <div class="alert alert-success d-flex align-items-center" role="alert" style="margin-top:20px;">
+                <div class="alert alert-success d-flex align-items-center alert-dismissible fade show" role="alert">
                     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
-                    <div>
-                        <?php echo $successEditMessage; ?>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="margin-left:auto;"></button>
+                    <div><?php echo $successEditMessage; ?></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>
 
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <input type="text" id="searchInput" class="form-control" placeholder="Search categories..." onkeyup="filterTable()">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <ion-icon name="search-outline"></ion-icon>
-                        </button>
-                    </div>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search categories...">
                 </div>
                 <div class="col-md-6">
-                    <select name="statusFilter" id="statusFilter" class="form-control" onchange="filterTable()">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                    <select name="sortOrder" id="sortOrder" class="form-control">
+                        <option value="asc">Sort A-Z</option>
+                        <option value="desc">Sort Z-A</option>
                     </select>
                 </div>
             </div>
@@ -233,12 +220,14 @@ $companyName = $companyProfile['name'];
             <div class="row">
                 <div class="col-md-12">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="categoryTable" style="border-top: 1px solid #dee2e6; border-left: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
-                            <thead>
-                                <th style="width:150px;">Category ID</th>
-                                <th style="width:200px;">Category Name</th>
-                                <th style="width:400px;">Description</th>
-                                <th style="width:150px;">Actions</th>
+                        <table class="table table-bordered table-striped" id="categoryTable">
+                            <thead class="alert-info">
+                                <tr>
+                                    <th>Category ID</th>
+                                    <th>Category Name</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 <?php
@@ -255,8 +244,14 @@ $companyName = $companyProfile['name'];
                                     <td><?php echo $row['categoryname'];?></td>
                                     <td><?php echo $row['categorydescription'];?></td>
                                     <td>
-                                        <a href="editcategory.php?editid=<?php echo htmlentities($row['categoryid']);?>" class="btn btn-sm" style="background-color:#1988F5; margin-right:5px;"> <ion-icon name="create-outline"></ion-icon></a>
-                                        <a href="Category.php?delid=<?php echo htmlentities($row['categoryid']);?>" onClick="return confirm('Are you sure you want to delete this category?');" class="btn btn-danger btn-sm"><ion-icon name="trash-outline"></ion-icon></a>
+                                        <div class="d-flex">
+                                            <a href="editcategory.php?editid=<?php echo htmlentities($row['categoryid']);?>" class="btn btn-primary btn-sm me-1" title="Edit">
+                                                <ion-icon name="create-outline"></ion-icon>
+                                            </a>
+                                            <a href="Category.php?delid=<?php echo htmlentities($row['categoryid']);?>" onClick="return confirm('Are you sure you want to delete this category?');" class="btn btn-danger btn-sm" title="Delete">
+                                                <ion-icon name="trash-outline"></ion-icon>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php
@@ -281,39 +276,40 @@ $companyName = $companyProfile['name'];
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        $('#categoryTable').DataTable({
-            "searching": true,
-            "paging": true,
-            "lengthChange": true,
-            "pageLength": 10,
-            "ordering": true,
-            "info": true,
-            "autoWidth": false,
-            "responsive": true
-        });
+$(document).ready(function () {
+    $('#categoryTable').DataTable({
+        responsive: true,
+        searching: true,
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search...",
+        },
+        pageLength: 10,
+        lengthMenu: [5, 10, 25, 50],
+        columnDefs: [
+            { responsivePriority: 1, targets: 0 }, // Category ID
+            { responsivePriority: 2, targets: 1 }, // Category Name
+            { responsivePriority: 3, targets: 3 }, // Actions
+            { responsivePriority: 4, targets: 2 }  // Description
+        ]
     });
 
-    function filterTable() {
-        var searchText = $("#searchInput").val().toLowerCase();
-        var selectedStatus = $("#statusFilter").val().toLowerCase();
-        
-        $("#categoryTable tbody tr").each(function () {
-            var rowCategoryId = $(this).find('td:eq(0)').text().toLowerCase();
-            var rowCategoryName = $(this).find('td:eq(1)').text().toLowerCase();
-            var rowDescription = $(this).find('td:eq(2)').text().toLowerCase();
-            var rowText = $(this).text().toLowerCase();
-            // Show row if search text matches any column
-            var showRow = (rowText.indexOf(searchText) > -1); // && statusMatch;
-            $(this).toggle(showRow);
-        });
-    }
+    // Custom search functionality
+    $('#searchInput').keyup(function(){
+        $('#categoryTable').DataTable().search($(this).val()).draw();
+    });
 
-    function confirmDelete() {
-        return confirm('Are you sure you want to delete this category?');
-    }
+    // Custom sort functionality
+    $('#sortOrder').change(function(){
+        var order = $(this).val();
+        $('#categoryTable').DataTable().order([1, order]).draw();
+    });
+});
+
+function confirmDelete() {
+    return confirm('Are you sure you want to delete this category?');
+}
 </script>
 
 </body>
 </html>
-

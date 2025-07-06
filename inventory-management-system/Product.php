@@ -9,8 +9,6 @@ $errorMessage = "";
 $success = false;
 $successMessage = "";
 
-
-
 if (isset($_POST['addproduct'])) {
     function validate($data) {
         // Trim whitespace
@@ -86,9 +84,6 @@ $companyProfileImagePath = $companyProfile['profilepicture'];
 $companyName = $companyProfile['name'];
 ?>
 
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -102,18 +97,17 @@ $companyName = $companyProfile['name'];
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.15.0/font/bootstrap-icons.css" rel="stylesheet">
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-  </symbol>
-  <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-  </symbol>
-  <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-  </symbol>
-</svg>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+        <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        </symbol>
+        <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+        </symbol>
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </symbol>
+    </svg>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Admin Dashboard</title>
     <script>
         function previewImage(event) {
@@ -127,9 +121,45 @@ $companyName = $companyProfile['name'];
             
             reader.readAsDataURL(input.files[0]); // convert to base64 string
         }
-       
 
+        function clearForm() {
+            // Get all form elements
+            var form = document.getElementById("productForm");
 
+            // Reset text inputs, number inputs, and textarea
+            var inputs = form.querySelectorAll("input[type=text], input[type=number], textarea");
+            inputs.forEach(function(input) {
+                input.value = "";
+            });
+
+            // Reset file input
+            var fileInput = form.querySelector("input[type=file]");
+            fileInput.value = "";
+
+            // Reset select
+            var select = form.querySelector("select");
+            select.selectedIndex = 0; // Assuming the first option is the default option
+
+            // Reset category dropdown
+            var categorySelect = form.querySelector("select[name=category]");
+            categorySelect.selectedIndex = 0; // Assuming the first option is the default option
+
+            // Reset image preview
+            var imagePreview = document.getElementById("imagePreview");
+            imagePreview.src = ""; // Set the source to an empty string
+        }
+
+        function toggleVariantInput() {
+            var variantInput = document.getElementById('variant');
+
+            // Toggle visibility by changing the display style property
+            variantInput.style.display = variantInput.style.display === 'none' ? 'block' : 'none';
+
+            // Set focus to the input field if it's visible
+            if (variantInput.style.display !== 'none') {
+                variantInput.focus();
+            }
+        }
     </script>
 </head>
 
@@ -162,48 +192,48 @@ $companyName = $companyProfile['name'];
 </li>
 <li class="navList">
     <a href="Inventory.php">
-        <ion-icon name="file-tray-full"></ion-icon> <!-- Change to the desired icon name, e.g., "apps-outline" for inventory -->
+        <ion-icon name="file-tray-full"></ion-icon>
         <span class="links">Inventory</span>
     </a>
 </li>
 <li class="navList active">
     <a href="Product.php">
-        <ion-icon name="add-circle"></ion-icon> <!-- Change to the desired icon name, e.g., "bag-outline" for product -->
+        <ion-icon name="add-circle"></ion-icon>
         <span class="links">Add Product</span>
     </a>
 </li>
 
     <li class="navList">
         <a href="Category.php">
-            <ion-icon name="grid"></ion-icon> <!-- Change to the desired icon name, e.g., "person-outline" for account -->
+            <ion-icon name="grid"></ion-icon>
             <span class="links">Category</span>
         </a>
     </li>  
 
     <li class="navList">
         <a href="Order.php">
-        <ion-icon name="swap-horizontal"></ion-icon> <!-- Change to the desired icon name, e.g., "person-outline" for account -->
+        <ion-icon name="swap-horizontal"></ion-icon>
             <span class="links">Product Transfer</span>
         </a>
     </li> 
 
     <li class="navList">
         <a href="Reports.php">
-            <ion-icon name="reader"></ion-icon> <!-- Change to the desired icon name, e.g., "person-outline" for account -->
+            <ion-icon name="reader"></ion-icon>
             <span class="links">Inventory Journal</span>
         </a>
     </li> 
 
     <li class="navList">
         <a href="audittrails.php">
-        <ion-icon name="receipt"></ion-icon> <!-- Change to the desired icon name, e.g., "person-outline" for account -->
+        <ion-icon name="receipt"></ion-icon>
             <span class="links">Audit trails</span>
         </a>
     </li> 
 
     <li class="navList">
         <a href="Settings.php">
-            <ion-icon name="cog"></ion-icon> <!-- Change to the desired icon name, e.g., "person-outline" for account -->
+            <ion-icon name="cog"></ion-icon>
             <span class="links">Settings</span>
         </a>
     </li>          
@@ -272,7 +302,6 @@ $companyName = $companyProfile['name'];
     <div class="col-md-3">
         <label for="image" class="form-label">Browse Image</label>
         <input type="file" name="image" class="form-control" onchange="previewImage(event)" required="" accept="image/*" />
-
     </div>
 
 
@@ -307,11 +336,8 @@ $companyName = $companyProfile['name'];
     </div>
     
     <div class="col-md-3">
-        
         <img id="imagePreview" alt="Image Preview" style="width:300px; height: 183px;">
     </div>
-
-    
 
     <div class="col-md-5">
     <div style="display:flex;">
@@ -371,19 +397,16 @@ if (!empty($variant)) {
 }
 ?>
 
-
-    
-
-    <div class="col-md-12">
-        <button type="submit" name="addproduct" class="allButton" >
-            <b>Add Product</b></button> 
-            <button type="button" class="allButton" onclick="toggleVariantInput()" style="background-color:#2C88C1; border-color:#2C88C1;">
-            <b>Add Variant</b>
+    <div class="col-md-12 d-flex gap-2">
+        <button type="submit" name="addproduct" class="btn btn-primary">
+            <ion-icon name="add-circle-outline"></ion-icon> Add Product
+        </button> 
+        <button type="button" class="btn btn-info text-white" onclick="toggleVariantInput()">
+            <ion-icon name="color-palette-outline"></ion-icon> Add Variant
         </button>
-            <button type="button" class="allButton" onclick="clearForm()" style="background-color:red; border-color:red;">
-            <b>Clear</b>
+        <button type="button" class="btn btn-danger" onclick="clearForm()">
+            <ion-icon name="trash-outline"></ion-icon> Clear
         </button>
-       
     </div>
 </form>
 
@@ -392,50 +415,9 @@ if (!empty($variant)) {
         </div>
 </div>
     </section>
-    <script>
-function clearForm() {
-    // Get all form elements
-    var form = document.getElementById("productForm");
-
-    // Reset text inputs, number inputs, and textarea
-    var inputs = form.querySelectorAll("input[type=text], input[type=number], textarea");
-    inputs.forEach(function(input) {
-        input.value = "";
-    });
-
-    // Reset file input
-    var fileInput = form.querySelector("input[type=file]");
-    fileInput.value = "";
-
-    // Reset select
-    var select = form.querySelector("select");
-    select.selectedIndex = 0; // Assuming the first option is the default option
-
-    // Reset category dropdown
-    var categorySelect = form.querySelector("select[name=category]");
-    categorySelect.selectedIndex = 0; // Assuming the first option is the default option
-
-    // Reset image preview
-    var imagePreview = document.getElementById("imagePreview");
-    imagePreview.src = ""; // Set the source to an empty string
-}
-
-function toggleVariantInput() {
-    var variantInput = document.getElementById('variant');
-
-    // Toggle visibility by changing the display style property
-    variantInput.style.display = variantInput.style.display === 'none' ? 'block' : 'none';
-
-    // Set focus to the input field if it's visible
-    if (variantInput.style.display !== 'none') {
-        variantInput.focus();
-    }
-}
-</script>
 
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <script src="./index.js"></script>
 </body>
-
 </html>
