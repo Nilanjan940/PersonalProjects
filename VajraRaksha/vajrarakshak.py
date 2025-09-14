@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -24,7 +23,7 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    .alert-box {
+    .alert-box-critical {
         background-color: #ff4b4b;
         color: white;
         padding: 15px;
@@ -34,7 +33,16 @@ st.markdown("""
         text-align: center;
         animation: blink 1s infinite;
     }
-    .normal-box {
+    .alert-box-warning {
+        background-color: #FF9900;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .alert-box-normal {
         background-color: #4CAF50;
         color: white;
         padding: 15px;
@@ -62,6 +70,22 @@ st.markdown("""
     .stButton button {
         background-color: #4E5B31;
         color: white;
+    }
+    .action-button {
+        background-color: #4E5B31;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+        font-weight: bold;
+    }
+    .action-button:hover {
+        background-color: #3A4524;
+    }
+    .drone-path {
+        stroke-dasharray: 5,5;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -92,11 +116,11 @@ def login_form():
         if submitted:
             if authenticate(username, password, otp):
                 st.session_state.authenticated = True
-                st.rerun()  # <--- fixed here
+                st.rerun()
             else:
                 st.error("Authentication failed. Please check your credentials.")
 
-# Generate sample drone data
+# Generate sample drone data with planned vs actual paths
 def generate_drone_data(num_drones=10, hours=24):
     drones = []
     for i in range(num_drones):
@@ -105,21 +129,53 @@ def generate_drone_data(num_drones=10, hours=24):
         base_lon = 74.8570 + np.random.uniform(-0.5, 0.5)
         
         # Generate telemetry data
-        timestamps = [datetime.now() - timedelta(hours=h) for h in range(hours, 0, -1)]
-        altitude = np.random.normal(150, 30, hours)
-        velocity = np.random.normal(25, 5, hours)
-        battery = np.linspace(100, np.random.uniform(10, 40), hours)
-        gps_drift = np.random.exponential(1, hours)
+        timestamps = [datetime.now() - timedelta(minutes=5*m) for m in range(hours*12, 0, -1)]
+        altitude = np.random.normal(150, 30, len(timestamps))
+        velocity = np.random.normal(25, 5, len(timestamps))
+        battery = np.linspace(100, np.random.uniform(10, 40), len(timestamps))
+        gps_drift = np.random.exponential(1, len(timestamps))
+        
+        # Generate planned vs actual path data
+        planned_lats = [base_lat + np.sin(t/50) * 0.1 for t in range(len(timestamps))]
+        planned_lons = [base_lon + np.cos(t/50) * 0.1 for t in range(len(timestamps))]
+        
+        actual_lats = [planned_lats[t] + np.random.normal(0, 0.005) for t in range(len(timestamps))]
+        actual_lons = [planned_lons[t] + np.random.normal(0, 0.005) for t in range(len(timestamps))]
         
         # Introduce some anomalies
-        anomalies = np.zeros(hours)
+        anomalies = np.zeros(len(timestamps))
+        anomaly_types = []
+        anomaly_confidences = []
+        
         if np.random.random() < 0.3:  # 30% chance of having anomalies
-            anomaly_points = np.random.choice(range(5, hours-1), size=np.random.randint(1, 4), replace=False)
+            anomaly_points = np.random.choice(range(5, len(timestamps)-1), size=np.random.randint(1, 4), replace=False)
             for point in anomaly_points:
-                anomalies[point] = 1
-                altitude[point] += np.random.uniform(50, 100) * np.random.choice([-1, 1])
-                velocity[point] += np.random.uniform(10, 20) * np.random.choice([-1, 1])
-                gps_drift[point] += np.random.uniform(5, 15)
+                anomalies[point] = np.random.choice([1, 2, 3])  # 1: Low, 2: Medium, 3: High severity
+                
+                # Determine anomaly type
+                anomaly_type = np.random.choice(["GPS Spoofing", "Battery Drain", "Signal Jamming", "Unauthorized Diversion"])
+                anomaly_types.append({
+                    "timestamp": timestamps[point],
+                    "type": anomaly_type,
+                    "severity": anomalies[point],
+                    "confidence": np.random.uniform(0.7, 0.95)
+                })
+                
+                # Adjust telemetry based on anomaly type
+                if anomaly_type == "GPS Spoofing":
+                    actual_lats[point] += np.random.uniform(-0.02, 0.02)
+                    actual_lons[point] += np.random.uniform(-0.02, 0.02)
+                    gps_drift[point] += np.random.uniform(5, 15)
+                elif anomaly_type == "Battery Drain":
+                    battery[point:] -= np.random.uniform(5, 15)
+                    if battery[point] < 0:
+                        battery[point] = 0
+                elif anomaly_type == "Signal Jamming":
+                    gps_drift[point] += np.random.uniform(10, 20)
+                    velocity[point] += np.random.uniform(-5, 5)
+                elif anomaly_type == "Unauthorized Diversion":
+                    actual_lats[point:] = [l + np.random.uniform(-0.01, 0.01) for l in actual_lats[point:]]
+                    actual_lons[point:] = [l + np.random.uniform(-0.01, 0.01) for l in actual_lons[point:]]
         
         drones.append({
             'id': drone_id,
@@ -127,14 +183,19 @@ def generate_drone_data(num_drones=10, hours=24):
             'status': 'Active' if np.random.random() > 0.2 else 'Maintenance',
             'base_lat': base_lat,
             'base_lon': base_lon,
-            'current_lat': base_lat + np.random.uniform(-0.01, 0.01),
-            'current_lon': base_lon + np.random.uniform(-0.01, 0.01),
+            'current_lat': actual_lats[-1],
+            'current_lon': actual_lons[-1],
             'timestamps': timestamps,
             'altitude': altitude,
             'velocity': velocity,
             'battery': battery,
             'gps_drift': gps_drift,
-            'anomalies': anomalies
+            'anomalies': anomalies,
+            'anomaly_details': anomaly_types,
+            'planned_lats': planned_lats,
+            'planned_lons': planned_lons,
+            'actual_lats': actual_lats,
+            'actual_lons': actual_lons
         })
     
     return drones
@@ -168,29 +229,65 @@ def main_dashboard():
         st.markdown("<h1 class='main-header'>Project Vajra Raksha</h1>", unsafe_allow_html=True)
         st.markdown("### AI-Powered Drone Anomaly Detection System")
     
-    # Alert panel
-    anomaly_drones = [d for d in drones if d['anomalies'].sum() > 0]
-    if anomaly_drones:
+    # Alert panel with multi-level warnings
+    critical_anomalies = []
+    warning_anomalies = []
+    
+    for drone in drones:
+        for anomaly in drone['anomaly_details']:
+            if anomaly['severity'] == 3:  # High severity
+                critical_anomalies.append({
+                    'drone': drone['call_sign'],
+                    'type': anomaly['type'],
+                    'confidence': anomaly['confidence'],
+                    'timestamp': anomaly['timestamp']
+                })
+            elif anomaly['severity'] == 2:  # Medium severity
+                warning_anomalies.append({
+                    'drone': drone['call_sign'],
+                    'type': anomaly['type'],
+                    'confidence': anomaly['confidence'],
+                    'timestamp': anomaly['timestamp']
+                })
+    
+    if critical_anomalies:
         with st.container():
-            st.markdown(f'<div class="alert-box">🚨 ALERT: Anomalies detected in {len(anomaly_drones)} drones</div>', unsafe_allow_html=True)
-            for drone in anomaly_drones:
-                st.write(f"- {drone['call_sign']} ({drone['id']}) - {int(drone['anomalies'].sum())} anomalies detected")
-            col1, col2, col3 = st.columns(3)
+            st.markdown(f'<div class="alert-box-critical">🚨 CRITICAL ALERT: {len(critical_anomalies)} high-severity anomalies detected</div>', unsafe_allow_html=True)
+            for anomaly in critical_anomalies:
+                st.write(f"- {anomaly['drone']}: {anomaly['type']} (Confidence: {anomaly['confidence']*100:.1f}%) at {anomaly['timestamp'].strftime('%H:%M:%S')}")
+            
+            # One-click recommendations for critical anomalies
+            st.subheader("Recommended Actions")
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.button("View Details")
+                if st.button("Return to Base", key="rtb_btn"):
+                    st.success("Return to Base command sent to affected drones")
             with col2:
-                st.button("Initiate Countermeasures")
+                if st.button("Emergency Landing", key="eland_btn"):
+                    st.success("Emergency Landing command sent to affected drones")
             with col3:
-                st.button("Acknowledge Alert")
+                if st.button("Secure Comms", key="comms_btn"):
+                    st.success("Secure communication protocol activated")
+            with col4:
+                if st.button("Deploy Countermeasures", key="cm_btn"):
+                    st.success("Countermeasures deployed for affected drones")
+    
+    elif warning_anomalies:
+        with st.container():
+            st.markdown(f'<div class="alert-box-warning">⚠️ WARNING: {len(warning_anomalies)} medium-severity anomalies detected</div>', unsafe_allow_html=True)
+            for anomaly in warning_anomalies:
+                st.write(f"- {anomaly['drone']}: {anomaly['type']} (Confidence: {anomaly['confidence']*100:.1f}%) at {anomaly['timestamp'].strftime('%H:%M:%S')}")
     else:
-        st.markdown('<div class="normal-box">✅ SYSTEM STATUS: NORMAL</div>', unsafe_allow_html=True)
+        st.markdown('<div class="alert-box-normal">✅ SYSTEM STATUS: NORMAL</div>', unsafe_allow_html=True)
     
     # Metrics
     st.subheader("Fleet Overview")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     active_drones = len([d for d in drones if d['status'] == 'Active'])
-    anomaly_count = sum([d['anomalies'].sum() for d in drones])
+    anomaly_count = sum([len(d['anomaly_details']) for d in drones])
+    critical_count = len(critical_anomalies)
+    warning_count = len(warning_anomalies)
     avg_battery = np.mean([d['battery'][-1] for d in drones if d['status'] == 'Active'])
     
     with col1:
@@ -198,51 +295,142 @@ def main_dashboard():
     with col2:
         st.metric("Active Drones", active_drones)
     with col3:
-        st.metric("Anomalies Detected", int(anomaly_count))
+        st.metric("Critical Alerts", critical_count)
     with col4:
+        st.metric("Warnings", warning_count)
+    with col5:
         st.metric("Avg Battery", f"{avg_battery:.1f}%")
     
-    # Map view
-    st.subheader("Live Operations Map")
+    # Enhanced Map view with planned vs actual paths
+    st.subheader("Live Operations Map - Planned vs Actual Paths")
     
-    # Create map data
-    map_data = pd.DataFrame({
-        'lat': [d['current_lat'] for d in drones],
-        'lon': [d['current_lon'] for d in drones],
-        'size': [10 for _ in drones],
-        'color': ['red' if d['anomalies'].sum() > 0 else 'green' for d in drones],
-        'label': [d['call_sign'] for d in drones]
-    })
+    # Create a Plotly map with planned vs actual paths
+    fig = go.Figure()
     
-    st.map(map_data, zoom=9)
+    for drone in drones:
+        # Add planned path
+        fig.add_trace(go.Scattermapbox(
+            lat=drone['planned_lats'],
+            lon=drone['planned_lons'],
+            mode='lines',
+            line=dict(width=2, color='green', dash='dash'),
+            name=f"{drone['call_sign']} Planned",
+            hoverinfo='text',
+            text=f"Planned Path: {drone['call_sign']}"
+        ))
+        
+        # Add actual path
+        fig.add_trace(go.Scattermapbox(
+            lat=drone['actual_lats'],
+            lon=drone['actual_lons'],
+            mode='lines',
+            line=dict(width=3, color='red' if len(drone['anomaly_details']) > 0 else 'blue'),
+            name=f"{drone['call_sign']} Actual",
+            hoverinfo='text',
+            text=f"Actual Path: {drone['call_sign']}"
+        ))
+        
+        # Add current position
+        fig.add_trace(go.Scattermapbox(
+            lat=[drone['current_lat']],
+            lon=[drone['current_lon']],
+            mode='markers',
+            marker=dict(size=12, color='red' if len(drone['anomaly_details']) > 0 else 'green'),
+            name=f"{drone['call_sign']} Current",
+            hoverinfo='text',
+            text=f"{drone['call_sign']} - {drone['id']}<br>Status: {drone['status']}<br>Battery: {drone['battery'][-1]:.1f}%<br>Anomalies: {len(drone['anomaly_details'])}"
+        ))
     
-    # Drone status grid
-    st.subheader("Drone Status")
-    cols = st.columns(4)
+    # Update map layout
+    fig.update_layout(
+        mapbox=dict(
+            style="open-street-map",
+            center=dict(lat=32.7266, lon=74.8570),
+            zoom=9
+        ),
+        height=500,
+        margin={"r":0,"t":0,"l":0,"b":0},
+        showlegend=False
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Drone status grid with more detailed information
+    st.subheader("Drone Status with Anomaly Details")
     
     for i, drone in enumerate(drones):
-        with cols[i % 4]:
-            # Determine status color
-            if drone['anomalies'].sum() > 0:
-                status_color = "red"
-            elif drone['status'] == 'Active':
-                status_color = "green"
-            else:
-                status_color = "gray"
-                
-            st.markdown(f"""
-            <div style='border: 2px solid {status_color}; border-radius: 10px; padding: 10px; margin: 5px;'>
-                <h3 style='margin: 0;'>{drone['call_sign']}</h3>
-                <p style='margin: 0;'><b>ID:</b> {drone['id']}</p>
-                <p style='margin: 0;'><b>Status:</b> {drone['status']}</p>
-                <p style='margin: 0;'><b>Battery:</b> {drone['battery'][-1]:.1f}%</p>
-                <p style='margin: 0;'><b>Anomalies:</b> {int(drone['anomalies'].sum())}</p>
-            </div>
-            """, unsafe_allow_html=True)
+        # Determine status color
+        if any(anom['severity'] == 3 for anom in drone['anomaly_details']):
+            status_color = "red"
+            status_text = "CRITICAL"
+        elif any(anom['severity'] == 2 for anom in drone['anomaly_details']):
+            status_color = "orange"
+            status_text = "WARNING"
+        elif drone['status'] == 'Active':
+            status_color = "green"
+            status_text = "NORMAL"
+        else:
+            status_color = "gray"
+            status_text = "MAINTENANCE"
+        
+        # Create expandable section for each drone
+        with st.expander(f"{drone['call_sign']} - {status_text}", expanded=(status_color == "red")):
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Battery", f"{drone['battery'][-1]:.1f}%")
+            with col2:
+                st.metric("Altitude", f"{drone['altitude'][-1]:.1f} m")
+            with col3:
+                st.metric("Velocity", f"{drone['velocity'][-1]:.1f} m/s")
+            with col4:
+                st.metric("GPS Drift", f"{drone['gps_drift'][-1]:.2f}")
+            
+            # Show anomaly details if any
+            if drone['anomaly_details']:
+                st.subheader("Detected Anomalies")
+                for anomaly in drone['anomaly_details']:
+                    severity_text = "CRITICAL" if anomaly['severity'] == 3 else "WARNING" if anomaly['severity'] == 2 else "LOW"
+                    severity_color = "red" if anomaly['severity'] == 3 else "orange" if anomaly['severity'] == 2 else "yellow"
+                    
+                    st.markdown(f"""
+                    <div style='border-left: 5px solid {severity_color}; padding-left: 10px; margin: 10px 0;'>
+                        <b>Type:</b> {anomaly['type']}<br>
+                        <b>Severity:</b> <span style='color: {severity_color};'>{severity_text}</span><br>
+                        <b>Confidence:</b> {anomaly['confidence']*100:.1f}%<br>
+                        <b>Time:</b> {anomaly['timestamp'].strftime('%H:%M:%S')}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Contextual recommendations based on anomaly type
+                    if anomaly['type'] == "GPS Spoofing":
+                        st.info("Recommended action: Verify GPS signals, switch to inertial navigation, return to base")
+                    elif anomaly['type'] == "Battery Drain":
+                        st.info("Recommended action: Check power systems, return to base immediately")
+                    elif anomaly['type'] == "Signal Jamming":
+                        st.info("Recommended action: Switch to secure communication channels, deploy countermeasures")
+                    elif anomaly['type'] == "Unauthorized Diversion":
+                        st.info("Recommended action: Regain control, return to planned route, secure systems")
+            
+            # One-click action buttons for each drone
+            st.subheader("Quick Actions")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                if st.button("Return to Base", key=f"rtb_{drone['id']}"):
+                    st.success(f"Return to Base command sent to {drone['call_sign']}")
+            with col2:
+                if st.button("Emergency Landing", key=f"eland_{drone['id']}"):
+                    st.success(f"Emergency Landing command sent to {drone['call_sign']}")
+            with col3:
+                if st.button("Secure Comms", key=f"comms_{drone['id']}"):
+                    st.success(f"Secure communication activated for {drone['call_sign']}")
+            with col4:
+                if st.button("Full Diagnostics", key=f"diag_{drone['id']}"):
+                    st.success(f"Diagnostics initiated for {drone['call_sign']}")
     
-    # Telemetry charts
-    st.subheader("Telemetry Analysis")
-    selected_drone = st.selectbox("Select Drone", [d['call_sign'] for d in drones])
+    # Telemetry charts for selected drone
+    st.subheader("Detailed Telemetry Analysis")
+    selected_drone = st.selectbox("Select Drone for Detailed Analysis", [d['call_sign'] for d in drones])
     
     drone = next(d for d in drones if d['call_sign'] == selected_drone)
     
@@ -276,37 +464,21 @@ def main_dashboard():
     )
     
     # Highlight anomalies
-    anomaly_indices = np.where(drone['anomalies'] == 1)[0]
-    for idx in anomaly_indices:
+    for anomaly in drone['anomaly_details']:
+        # Find the closest timestamp index
+        idx = min(range(len(drone['timestamps'])), key=lambda i: abs(drone['timestamps'][i] - anomaly['timestamp']))
+        
+        severity_color = "red" if anomaly['severity'] == 3 else "orange" if anomaly['severity'] == 2 else "yellow"
+        
         fig.add_vrect(
-            x0=drone['timestamps'][idx], x1=drone['timestamps'][idx] + timedelta(minutes=30),
-            fillcolor="red", opacity=0.2, line_width=0,
-            row="all", col="all"
+            x0=drone['timestamps'][idx], x1=drone['timestamps'][idx] + timedelta(minutes=10),
+            fillcolor=severity_color, opacity=0.2, line_width=0,
+            row="all", col="all",
+            annotation_text=anomaly['type'], annotation_position="top left"
         )
     
     fig.update_layout(height=600, showlegend=False, title_text=f"Telemetry Data for {selected_drone}")
     st.plotly_chart(fig, use_container_width=True)
-    
-    # Anomaly analysis
-    st.subheader("Anomaly Detection Details")
-    
-    if drone['anomalies'].sum() > 0:
-        st.warning(f"Anomalies detected in {selected_drone}. Review the highlighted areas in the telemetry data.")
-        
-        # Show anomaly details
-        for idx in anomaly_indices:
-            st.write(f"**Anomaly at {drone['timestamps'][idx].strftime('%H:%M:%S')}**")
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Altitude", f"{drone['altitude'][idx]:.1f} m", delta=f"{drone['altitude'][idx] - drone['altitude'][idx-1]:.1f}")
-            with col2:
-                st.metric("Velocity", f"{drone['velocity'][idx]:.1f} m/s", delta=f"{drone['velocity'][idx] - drone['velocity'][idx-1]:.1f}")
-            with col3:
-                st.metric("GPS Drift", f"{drone['gps_drift'][idx]:.2f}", delta=f"{drone['gps_drift'][idx] - drone['gps_drift'][idx-1]:.2f}")
-            with col4:
-                st.metric("Battery", f"{drone['battery'][idx]:.1f}%", delta=f"{drone['battery'][idx] - drone['battery'][idx-1]:.1f}")
-    else:
-        st.success(f"No anomalies detected in {selected_drone}. All systems operating normally.")
     
     # Footer
     st.markdown("---")
@@ -320,4 +492,4 @@ else:
     main_dashboard()
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
-        st.rerun()  # <--- fixed here
+        st.rerun()
