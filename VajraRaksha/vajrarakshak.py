@@ -138,19 +138,53 @@ st.markdown("""
         border: none;
     }
     
-    /* Custom tabs */
-    .custom-tab {
-        padding: 10px 20px;
-        border-radius: 6px;
-        background-color: #f0f2f6;
-        margin: 5px;
-        cursor: pointer;
-        transition: all 0.3s;
+    /* Mission status indicators */
+    .mission-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+        margin: 4px;
     }
-    .custom-tab.active {
-        background-color: #4E5B31;
+    .status-active {
+        background-color: #4CAF50;
         color: white;
-        font-weight: bold;
+    }
+    .status-completed {
+        background-color: #2196F3;
+        color: white;
+    }
+    .status-critical {
+        background-color: #f44336;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    .status-warning {
+        background-color: #FF9800;
+        color: white;
+    }
+    
+    /* Command console */
+    .command-console {
+        background-color: #1a1a1a;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        height: 200px;
+        overflow-y: auto;
+        border: 1px solid #4E5B31;
+    }
+    
+    /* Weather indicator */
+    .weather-widget {
+        background: linear-gradient(135deg, #64b3f4 0%, #4E5B31 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -162,6 +196,18 @@ if 'current_view' not in st.session_state:
     st.session_state.current_view = "Dashboard"
 if 'selected_drone' not in st.session_state:
     st.session_state.selected_drone = None
+if 'command_log' not in st.session_state:
+    st.session_state.command_log = []
+if 'mission_status' not in st.session_state:
+    st.session_state.mission_status = "ACTIVE"
+if 'weather_data' not in st.session_state:
+    st.session_state.weather_data = {
+        'temperature': 28,
+        'humidity': 45,
+        'wind_speed': 12,
+        'visibility': '10 km',
+        'conditions': 'Clear'
+    }
 
 # Authentication function
 def authenticate(username, password, otp):
@@ -189,6 +235,7 @@ def login_form():
                 if submitted:
                     if authenticate(username, password, otp):
                         st.session_state.authenticated = True
+                        st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - User authenticated successfully")
                         st.rerun()
                     else:
                         st.error("Authentication failed. Please check your credentials.")
@@ -292,13 +339,16 @@ def render_header():
         
         # Current time and operation status
         now = datetime.now()
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.info(f"**System Time:** {now.strftime('%H:%M:%S')}")
         with col2:
             st.info(f"**Operation:** Jammu Sector")
         with col3:
             st.info(f"**Grid:** NF-942-835")
+        with col4:
+            status_class = "status-critical" if st.session_state.mission_status == "ALERT" else "status-active"
+            st.markdown(f"**Mission Status:** <span class='mission-status {status_class}'>{st.session_state.mission_status}</span>", unsafe_allow_html=True)
 
 # Alert system
 def render_alert_system(drones):
@@ -325,6 +375,7 @@ def render_alert_system(drones):
                 })
     
     if critical_anomalies:
+        st.session_state.mission_status = "ALERT"
         with st.container():
             st.markdown(f'<div class="alert-box-critical">🚨 CRITICAL ALERT: {len(critical_anomalies)} high-severity anomalies detected</div>', unsafe_allow_html=True)
             for anomaly in critical_anomalies:
@@ -335,18 +386,23 @@ def render_alert_system(drones):
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 if st.button("Return to Base", key="rtb_btn", help="Order affected drones to return to base immediately"):
+                    st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Return to Base command sent to affected drones")
                     st.success("Return to Base command sent to affected drones")
             with col2:
                 if st.button("Emergency Landing", key="eland_btn", help="Initiate emergency landing protocol"):
+                    st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Emergency Landing command sent to affected drones")
                     st.success("Emergency Landing command sent to affected drones")
             with col3:
                 if st.button("Secure Comms", key="comms_btn", help="Activate secure communication channels"):
+                    st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Secure communication protocol activated")
                     st.success("Secure communication protocol activated")
             with col4:
                 if st.button("Deploy Countermeasures", key="cm_btn", help="Deploy electronic countermeasures"):
+                    st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Countermeasures deployed for affected drones")
                     st.success("Countermeasures deployed for affected drones")
     
     elif warning_anomalies:
+        st.session_state.mission_status = "WARNING"
         with st.container():
             st.markdown(f'<div class="alert-box-warning">⚠️ WARNING: {len(warning_anomalies)} medium-severity anomalies detected</div>', unsafe_allow_html=True)
             for anomaly in warning_anomalies:
@@ -355,6 +411,7 @@ def render_alert_system(drones):
             # Recommendations for warnings
             st.info("Monitor these drones closely. Consider initiating diagnostic checks or preparing contingency plans.")
     else:
+        st.session_state.mission_status = "NORMAL"
         st.markdown('<div class="alert-box-normal">✅ SYSTEM STATUS: NORMAL - All drones operating within parameters</div>', unsafe_allow_html=True)
 
 # Fleet metrics
@@ -593,15 +650,19 @@ def render_drone_card(drone):
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             if st.button("Return to Base", key=f"rtb_{drone['id']}", help="Order drone to return to base"):
+                st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Return to Base command sent to {drone['call_sign']}")
                 st.success(f"Return to Base command sent to {drone['call_sign']}")
         with col2:
             if st.button("Emergency Landing", key=f"eland_{drone['id']}", help="Initiate emergency landing protocol"):
+                st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Emergency Landing command sent to {drone['call_sign']}")
                 st.success(f"Emergency Landing command sent to {drone['call_sign']}")
         with col3:
             if st.button("Secure Comms", key=f"comms_{drone['id']}", help="Activate secure communication"):
+                st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Secure communication activated for {drone['call_sign']}")
                 st.success(f"Secure communication activated for {drone['call_sign']}")
         with col4:
             if st.button("Full Diagnostics", key=f"diag_{drone['id']}", help="Run complete diagnostic check"):
+                st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Diagnostics initiated for {drone['call_sign']}")
                 st.success(f"Diagnostics initiated for {drone['call_sign']}")
 
 # Telemetry analysis
@@ -675,6 +736,94 @@ def render_telemetry_analysis(drones):
     else:
         st.success("**Analysis:** No anomalies detected. All systems operating within normal parameters.")
 
+# Command console
+def render_command_console():
+    st.subheader("Command Console")
+    
+    # Command input
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        command = st.text_input("Enter command:", placeholder="Type command here...")
+    with col2:
+        if st.button("Execute", use_container_width=True):
+            if command:
+                st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Executed: {command}")
+                st.success(f"Command executed: {command}")
+    
+    # Command log
+    st.markdown("**Command Log:**")
+    console_html = "<div class='command-console'>"
+    for log_entry in st.session_state.command_log[-10:]:  # Show last 10 entries
+        console_html += f"{log_entry}<br>"
+    console_html += "</div>"
+    st.markdown(console_html, unsafe_allow_html=True)
+    
+    # Quick commands
+    st.markdown("**Quick Commands:**")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("System Check", key="sys_check"):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - System check initiated")
+            st.success("System check initiated")
+    with col2:
+        if st.button("Refresh Data", key="refresh_data"):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Data refresh requested")
+            st.rerun()
+    with col3:
+        if st.button("Export Report", key="export_report"):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Report export initiated")
+            st.success("Report exported successfully")
+    with col4:
+        if st.button("Emergency Protocol", key="emergency_protocol"):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Emergency protocol activated")
+            st.warning("Emergency protocol activated")
+
+# Weather and environmental data
+def render_environmental_data():
+    st.subheader("Environmental Conditions")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown("<div class='weather-widget'>", unsafe_allow_html=True)
+        st.metric("Temperature", f"{st.session_state.weather_data['temperature']}°C")
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("<div class='weather-widget'>", unsafe_allow_html=True)
+        st.metric("Humidity", f"{st.session_state.weather_data['humidity']}%")
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("<div class='weather-widget'>", unsafe_allow_html=True)
+        st.metric("Wind Speed", f"{st.session_state.weather_data['wind_speed']} km/h")
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown("<div class='weather-widget'>", unsafe_allow_html=True)
+        st.metric("Visibility", st.session_state.weather_data['visibility'])
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.caption(f"Current conditions: {st.session_state.weather_data['conditions']}")
+
+# Mission timeline
+def render_mission_timeline():
+    st.subheader("Mission Timeline")
+    
+    # Simulated mission events
+    mission_events = [
+        {"time": "06:00:00", "event": "Mission briefing completed", "status": "completed"},
+        {"time": "06:30:00", "event": "Drones deployed", "status": "completed"},
+        {"time": "07:15:00", "event": "Border patrol initiated", "status": "completed"},
+        {"time": "08:45:00", "event": "Target surveillance", "status": "active"},
+        {"time": "10:00:00", "event": "Scheduled refueling", "status": "pending"},
+        {"time": "12:00:00", "event": "Mission completion", "status": "pending"}
+    ]
+    
+    for event in mission_events:
+        status_icon = "✅" if event["status"] == "completed" else "🟢" if event["status"] == "active" else "⏱️"
+        st.write(f"{status_icon} **{event['time']}** - {event['event']}")
+
 # Main dashboard
 def main_dashboard():
     # Sidebar
@@ -710,12 +859,15 @@ def main_dashboard():
         # System controls
         st.subheader("System Controls")
         if st.button("Refresh Data", use_container_width=True):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Manual data refresh")
             st.rerun()
             
         if st.button("Export Report", use_container_width=True):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Report export initiated")
             st.success("Report exported successfully")
             
         if st.button("Emergency Protocol", use_container_width=True):
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - Emergency protocol activated")
             st.warning("Emergency protocol activated")
         
         st.markdown("---")
@@ -724,6 +876,7 @@ def main_dashboard():
         st.info("Logged in as: **Col. Dhaval Singh**")
         if st.button("Logout", use_container_width=True):
             st.session_state.authenticated = False
+            st.session_state.command_log.append(f"{datetime.now().strftime('%H:%M:%S')} - User logged out")
             st.rerun()
     
     # Main content area
@@ -735,14 +888,23 @@ def main_dashboard():
     # Alert system
     render_alert_system(drones)
     
+    # Environmental data
+    render_environmental_data()
+    
     # Fleet metrics
     render_fleet_metrics(drones)
     
     # Map view
     render_drone_map(drones)
     
+    # Mission timeline
+    render_mission_timeline()
+    
     # Drone status
     render_drone_status(drones)
+    
+    # Command console
+    render_command_console()
     
     # Telemetry analysis
     render_telemetry_analysis(drones)
