@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Aero - Urban Air Mobility</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --teal: #2AA8A8;
+            --navy: #0A2342;
+            --coral: #FF8A5B;
+            --white: #F8F9FA;
+            --gray: #e2e2e2;
+            --dark-gray: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--navy);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: var(--white);
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--teal);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 25px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: var(--navy);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: var(--teal);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--teal);
+            color: var(--teal);
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #238a8a;
+        }
+
+        .btn-outline:hover {
+            background: var(--teal);
+            color: var(--white);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(10, 35, 66, 0.8), rgba(10, 35, 66, 0.8)), url('https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80');
+            background-size: cover;
+            background-position: center;
+            color: var(--white);
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background-color: var(--white);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--teal);
+            margin-bottom: 15px;
+        }
+
+        .section-title p {
+            color: var(--dark-gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: var(--white);
+            font-size: 30px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: var(--navy);
+        }
+
+        /* Booking Form */
+        .booking {
+            padding: 80px 0;
+            background-color: var(--gray);
+        }
+
+        .booking-form {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Fleet Section */
+        .fleet {
+            padding: 80px 0;
+        }
+
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .vehicle-card {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .vehicle-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .vehicle-details {
+            padding: 20px;
+        }
+
+        .vehicle-details h3 {
+            margin-bottom: 10px;
+            color: var(--navy);
+        }
+
+        .specs {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        .spec {
+            text-align: center;
+        }
+
+        .spec-value {
+            font-weight: 700;
+            color: var(--teal);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--navy);
+            color: var(--white);
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-column h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--teal);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-column ul li a {
+            color: var(--white);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-column ul li a:hover {
+            color: var(--teal);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--teal);
+            border-radius: 50%;
+            color: var(--white);
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--coral);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            nav ul {
+                margin-top: 20px;
+                justify-content: center;
+            }
+
+            nav ul li {
+                margin: 0 10px;
+            }
+
+            .auth-buttons {
+                margin-top: 20px;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        /* Page Styles */
+        .page {
+            display: none;
+            padding: 40px 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: var(--teal);
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Booking confirmation */
+        .confirmation {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .confirmation-icon {
+            font-size: 80px;
+            color: var(--teal);
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <div class="logo-text">Aura Aero</div>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="nav-link" data-page="home">Home</a></li>
+                        <li><a href="#" class="nav-link" data-page="booking">Book a Flight</a></li>
+                        <li><a href="#" class="nav-link" data-page="fleet">Our Fleet</a></li>
+                        <li><a href="#" class="nav-link" data-page="about">About Us</a></li>
+                    </ul>
+                </nav>
+                <div class="auth-buttons">
+                    <button class="btn btn-outline" id="loginBtn">Login</button>
+                    <button class="btn btn-primary" id="signupBtn">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Home Page -->
+    <div id="home" class="page active">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1>The Future of Urban Air Mobility</h1>
+                <p>Experience seamless, sustainable air travel with Aura Aero's cutting-edge fleet of electric vertical takeoff and landing aircraft.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" id="bookNowBtn">Book Now</button>
+                    <button class="btn btn-outline" id="learnMoreBtn">Learn More</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Why Choose Aura Aero</h2>
+                    <p>We're revolutionizing urban transportation with a focus on sustainability, safety, and comfort</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Zero Emissions</h3>
+                        <p>Our all-electric fleet produces zero emissions, helping to create cleaner, quieter cities.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Ultra-Safe</h3>
+                        <p>Multiple redundant systems and AI-powered safety features ensure a secure journey.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3>Time Efficient</h3>
+                        <p>Cut your commute time by up to 70% by taking to the skies above traffic.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="booking">
+            <div class="container">
+                <div class="section-title">
+                    <h2>How It Works</h2>
+                    <p>Booking your Aura Aero flight is simple and straightforward</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3>Choose Locations</h3>
+                        <p>Select your departure and arrival points from our network of vertiports.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3>Select Time</h3>
+                        <p>Choose your preferred departure time or schedule for later.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3>Confirm Booking</h3>
+                        <p>Review your trip details and confirm with secure payment.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Booking Page -->
+    <div id="booking" class="page">
+        <div class="container">
+            <div class="section-title">
+                <h2>Book Your Flight</h2>
+                <p>Experience the future of urban transportation</p>
+            </div>
+            <div class="booking-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="from">From</label>
+                        <select id="from">
+                            <option value="">Select departure</option>
+                            <option value="manhattan">Manhattan Downtown Vertiport</option>
+                            <option value="jfk">JFK Airport Vertiport</option>
+                            <option value="newark">Newark Liberty Vertiport</option>
+                            <option value="brooklyn">Brooklyn Vertiport</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="to">To</label>
+                        <select id="to">
+                            <option value="">Select destination</option>
+                            <option value="manhattan">Manhattan Downtown Vertiport</option>
+                            <option value="jfk">JFK Airport Vertiport</option>
+                            <option value="newark">Newark Liberty Vertiport</option>
+                            <option value="brooklyn">Brooklyn Vertiport</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div class="form-group">
+                        <label for="passengers">Passengers</label>
+                        <select id="passengers">
+                            <option value="1">1 Passenger</option>
+                            <option value="2">2 Passengers</option>
+                            <option value="3">3 Passengers</option>
+                            <option value="4">4 Passengers</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" id="findFlightsBtn">Find Flights</button>
+            </div>
+
+            <div id="flightResults" style="display: none; margin-top: 40px;">
+                <h3 style="text-align: center; margin-bottom: 30px;">Available Flights</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Manhattan to JFK</h3>
+                        <p>Departure: 09:30 AM</p>
+                        <p>Arrival: 09:50 AM</p>
+                        <p>Duration: 20 min</p>
+                        <p class="spec-value">$129</p>
+                        <button class="btn btn-primary" style="margin-top: 15px;">Select Flight</button>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Manhattan to JFK</h3>
+                        <p>Departure: 10:30 AM</p>
+                        <p>Arrival: 10:50 AM</p>
+                        <p>Duration: 20 min</p>
+                        <p class="spec-value">$129</p>
+                        <button class="btn btn-primary" style="margin-top: 15px;">Select Flight</button>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Manhattan to JFK</h3>
+                        <p>Departure: 11:30 AM</p>
+                        <p>Arrival: 11:50 AM</p>
+                        <p>Duration: 20 min</p>
+                        <p class="spec-value">$149</p>
+                        <button class="btn btn-primary" style="margin-top: 15px;">Select Flight</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fleet Page -->
+    <div id="fleet" class="page">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Fleet</h2>
+                <p>State-of-the-art electric vertical takeoff and landing aircraft</p>
+            </div>
+            <div class="vehicle-grid">
+                <div class="vehicle-card">
+                    <div class="vehicle-image" style="background-image: url('https://images.unsplash.com/photo-1506941433945-99a2aa4bd50a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80');"></div>
+                    <div class="vehicle-details">
+                        <h3>Aura Voyager</h3>
+                        <p>Our flagship vehicle designed for comfort and efficiency on medium-range trips.</p>
+                        <div class="specs">
+                            <div class="spec">
+                                <div class="spec-value">4</div>
+                                <div class="spec-label">Passengers</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">150 mi</div>
+                                <div class="spec-label">Range</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">120 mph</div>
+                                <div class="spec-label">Cruise Speed</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" style="width: 100%;">View Details</button>
+                    </div>
+                </div>
+                <div class="vehicle-card">
+                    <div class="vehicle-image" style="background-image: url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');"></div>
+                    <div class="vehicle-details">
+                        <h3>Aura Sprinter</h3>
+                        <p>Agile and efficient for short urban hops with rapid turnaround times.</p>
+                        <div class="specs">
+                            <div class="spec">
+                                <div class="spec-value">2</div>
+                                <div class="spec-label">Passengers</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">75 mi</div>
+                                <div class="spec-label">Range</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">100 mph</div>
+                                <div class="spec-label">Cruise Speed</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" style="width: 100%;">View Details</button>
+                    </div>
+                </div>
+                <div class="vehicle-card">
+                    <div class="vehicle-image" style="background-image: url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');"></div>
+                    <div class="vehicle-details">
+                        <h3>Aura Nexus</h3>
+                        <p>Premium model with enhanced comfort and technology for executive transport.</p>
+                        <div class="specs">
+                            <div class="spec">
+                                <div class="spec-value">4</div>
+                                <div class="spec-label">Passengers</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">200 mi</div>
+                                <div class="spec-label">Range</div>
+                            </div>
+                            <div class="spec">
+                                <div class="spec-value">140 mph</div>
+                                <div class="spec-label">Cruise Speed</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" style="width: 100%;">View Details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Page -->
+    <div id="about" class="page">
+        <div class="container">
+            <div class="section-title">
+                <h2>About Aura Aero</h2>
+                <p>Redefining urban mobility for a sustainable future</p>
+            </div>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <p style="margin-bottom: 20px;">Aura Aero was founded in 2035 with a vision to transform urban transportation through sustainable aviation technology. Our mission is to reduce urban congestion and carbon emissions by providing safe, efficient, and accessible air mobility solutions.</p>
+                <p style="margin-bottom: 20px;">With headquarters in San Francisco and operations in major metropolitan areas worldwide, we're leading the transition to eco-friendly urban air travel. Our team of engineers, designers, and aviation experts are committed to excellence in every aspect of our service.</p>
+                <p style="margin-bottom: 20px;">By 2050, we aim to make urban air mobility accessible to everyone, creating faster connections between communities while reducing the environmental impact of transportation.</p>
+                
+                <h3 style="margin: 40px 0 20px; color: var(--teal);">Our Values</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Sustainability</h3>
+                        <p>We're committed to zero-emission transportation and minimizing our environmental footprint at every level.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Safety</h3>
+                        <p>Nothing is more important than the safety of our passengers, crew, and the communities we serve.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Innovation</h3>
+                        <p>We continuously push the boundaries of technology to improve the passenger experience and operational efficiency.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>Aura Aero</h3>
+                    <p>The future of urban air mobility is here. Experience sustainable, efficient travel with our cutting-edge eVOTL aircraft.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#" class="nav-link" data-page="home">Home</a></li>
+                        <li><a href="#" class="nav-link" data-page="booking">Book a Flight</a></li>
+                        <li><a href="#" class="nav-link" data-page="fleet">Our Fleet</a></li>
+                        <li><a href="#" class="nav-link" data-page="about">About Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Contact Us</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Skyway Blvd, San Francisco, CA</li>
+                        <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
+                        <li><i class="fas fa-envelope"></i> info@auraaero.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2050 Aura Aero. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>Login to Your Account</h2>
+            <div class="form-group">
+                <input type="email" placeholder="Email Address">
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Password">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" id="closeLoginModal">Cancel</button>
+                <button class="btn btn-primary">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <h2>Create an Account</h2>
+            <div class="form-group">
+                <input type="text" placeholder="Full Name">
+            </div>
+            <div class="form-group">
+                <input type="email" placeholder="Email Address">
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Password">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" id="closeSignupModal">Cancel</button>
+                <button class="btn btn-primary">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Confirmation -->
+    <div class="modal" id="confirmationModal">
+        <div class="modal-content">
+            <div class="confirmation">
+                <div class="confirmation-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>Booking Confirmed!</h2>
+                <p>Your flight from Manhattan to JFK has been successfully booked for June 15, 2050 at 09:30 AM.</p>
+                <p>Your booking reference is: <strong>AA-5X2H9</strong></p>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" id="closeConfirmationModal">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Page Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetPage = this.getAttribute('data-page');
+                
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Show target page
+                document.getElementById(targetPage).classList.add('active');
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+            });
+        });
+
+        // Modal functionality
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            document.getElementById('loginModal').style.display = 'flex';
+        });
+
+        document.getElementById('signupBtn').addEventListener('click', function() {
+            document.getElementById('signupModal').style.display = 'flex';
+        });
+
+        document.getElementById('closeLoginModal').addEventListener('click', function() {
+            document.getElementById('loginModal').style.display = 'none';
+        });
+
+        document.getElementById('closeSignupModal').addEventListener('click', function() {
+            document.getElementById('signupModal').style.display = 'none';
+        });
+
+        document.getElementById('closeConfirmationModal').addEventListener('click', function() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        });
+
+        // Book Now button
+        document.getElementById('bookNowBtn').addEventListener('click', function() {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show booking page
+            document.getElementById('booking').classList.add('active');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+
+        // Find Flights button
+        document.getElementById('findFlightsBtn').addEventListener('click', function() {
+            const from = document.getElementById('from').value;
+            const to = document.getElementById('to').value;
+            const date = document.getElementById('date').value;
+            
+            if (from && to && date) {
+                document.getElementById('flightResults').style.display = 'block';
+                
+                // Scroll to results
+                document.getElementById('flightResults').scrollIntoView({ behavior: 'smooth' });
+                
+                // Simulate booking confirmation after 3 seconds if a flight is selected
+                document.querySelectorAll('#flightResults .btn-primary').forEach(button => {
+                    button.addEventListener('click', function() {
+                        setTimeout(function() {
+                            document.getElementById('confirmationModal').style.display = 'flex';
+                        }, 1000);
+                    });
+                });
+            } else {
+                alert('Please fill out all fields to find available flights.');
+            }
+        });
+
+        // Learn More button
+        document.getElementById('learnMoreBtn').addEventListener('click', function() {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show about page
+            document.getElementById('about').classList.add('active');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // Set minimum date for booking to today
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('date').setAttribute('min', todayStr);
+    </script>
+</body>
+</html>
